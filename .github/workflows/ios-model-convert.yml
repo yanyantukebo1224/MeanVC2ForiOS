@@ -59,8 +59,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: meanvc2-vocos-coreml
-          path: ios/Models/MeanVC2Vocos.mlpackage
+          name: meanvc2-vocos-spectrogram-coreml
+          path: ios/Models/MeanVC2VocosSpectrogram.mlpackage
           if-no-files-found: ignore
           retention-days: 14
 
