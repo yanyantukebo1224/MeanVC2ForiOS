@@ -108,6 +108,15 @@ struct ContentView: View {
                 vocosDecoder = decoder
                 vocosReady = true
                 modelLogger.info("VOCOS_SMOKE_TEST_PASSED waveformSamples=\(sample.count)")
+                #if DEBUG
+                if let documents = FileManager.default.urls(
+                    for: .documentDirectory,
+                    in: .userDomainMask
+                ).first {
+                    let marker = documents.appendingPathComponent("vocos-smoke-test.ok")
+                    try? Data("PASS".utf8).write(to: marker, options: .atomic)
+                }
+                #endif
             } catch {
                 vocosError = "Vocos推論テストに失敗しました: \(error.localizedDescription)"
                 modelLogger.error("VOCOS_SMOKE_TEST_FAILED: \(error.localizedDescription)")
