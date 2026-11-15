@@ -133,6 +133,10 @@ def export_coreml(module, inputs, name, ct):
             )
             print("ASR aten::Int nodes:")
             print("\\n\\n".join(int_nodes))
+    output_names = (
+        ["bnf", "attention_cache_out", "convolution_cache_out"]
+        if name == "MeanVC2ASR" else ["vocos_spectrum"]
+    )
     mlmodel = ct.convert(
         traced,
         source="pytorch",
@@ -140,6 +144,7 @@ def export_coreml(module, inputs, name, ct):
         inputs=[ct.TensorType(name=n, shape=tuple(x.shape)) for n, x in zip(
             (["fbank", "pos_emb", "att_cache", "cnn_cache"]
              if name == "MeanVC2ASR" else ["mel"]), inputs)],
+        outputs=[ct.TensorType(name=n) for n in output_names],
         minimum_deployment_target=ct.target.iOS17,
         compute_precision=ct.precision.FLOAT16,
     )
@@ -269,6 +274,10 @@ def main():
         "profile": "40ms_40ms",
         "deployment_target": "iOS17",
         "exported_components": exported,
+        "output_features": {
+            "asr": ["bnf", "attention_cache_out", "convolution_cache_out"],
+            "vocoder_spectrogram": ["vocos_spectrum"]
+        },
         "not_exported": [
             "WavLM+ECAPA speaker encoder",
             "DiT/CFM decoder with per-layer streaming KV cache",
