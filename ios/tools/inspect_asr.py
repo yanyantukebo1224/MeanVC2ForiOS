@@ -15,6 +15,31 @@ lines = [
     "=== inlined graph ===",
     str(model.inlined_graph),
 ]
+
+# Verify whether the encoder's positional offset can be reset without changing
+# the streaming representation. If this fails, a fixed-offset Core ML export
+# would be invalid and must not be used.
+torch.manual_seed(20261115)
+att0 = torch.zeros(6, 4, 4, 128)
+cnn0 = torch.zeros(6, 1, 256, 8)
+fbanks = [torch.randn(1, 11, 80) for _ in range(4)]
+def run_sequence(reset_offset: bool):
+    att, cnn = att0.clone(), cnn0.clone()
+    outs = []
+    for index, fb in enumerate(fbanks):
+        offset = 4 if reset_offset else 4 + index * 2
+        with torch.no_grad():
+            out, att, cnn = model(
+                fb, torch.tensor(offset, dtype=torch.int64),
+                torch.tensor(4, dtype=torch.int64), att, cnn
+            )
+        outs.append(out.detach().clone())
+    return outs
+reference = run_sequence(False)
+reset = run_sequence(True)
+lines.append("=== fixed-offset streaming parity ===")
+for index, (a, b) in enumerate(zip(reference, reset)):
+    lines.append(f"chunk {index}: max_abs_diff={float((a-b).abs().max()):.9g}, allclose={bool(torch.allclose(a,b,rtol=1e-5,atol=1e-6))}")
 out = Path("ios/Diagnostics")
 out.mkdir(parents=True, exist_ok=True)
 target = out / "fastu2pp_torchscript_graph.txt"
