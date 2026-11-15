@@ -21,26 +21,21 @@ jobs:
       - name: Download latest validated Vocos Core ML package
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
           set -euo pipefail
           artifact_run=""
-          while IFS= read -r run_id; do
-            artifact_count="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts" --jq '[.artifacts[] | select(.name == "meanvc2-vocos-spectrogram-coreml" and .expired == false)] | length')"
-            if [ "${artifact_count}" -gt 0 ]; then
-              artifact_run="${run_id}"
-              break
-            fi
           run_ids="$(gh run list --workflow ios-model-convert.yml --branch ios-app-prototype --limit 50 --json databaseId --jq '.[].databaseId')"
           echo "Candidate model export runs:"
           printf '%s\\n' "${run_ids}"
-          while IFS= read -r run_id; do
-            [ -n "${run_id}" ] || continue
+
+          for run_id in ${run_ids}; do
             artifact_count="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts" --jq '[.artifacts[] | select(.name == "meanvc2-vocos-spectrogram-coreml" and .expired == false)] | length')"
             if [ "${artifact_count}" -gt 0 ]; then
               artifact_run="${run_id}"
               break
             fi
-          done <<< "${run_ids}"
+          done
 
           if [ -z "${artifact_run}" ]; then
             echo "No validated Vocos Core ML artifact was found."
