@@ -368,11 +368,14 @@ final class MeanVC2ONNXStream {
         guard let session = sessions[name] else {
             throw MeanVC2ONNXError.modelMissing(name)
         }
-        return try session.run(
+        guard let result = try session.run(
             withInputs: inputs,
             outputNames: outputs,
             runOptions: nil
-        )
+        ) else {
+            throw MeanVC2ONNXError.invalidTensor("ONNX Runtime returned no outputs for \\(name)")
+        }
+        return result
     }
 
     private func resetKeyValueCaches() throws {
@@ -445,7 +448,9 @@ enum ORTTensor {
     }
 
     static func readFloat(_ value: ORTValue) throws -> [Float] {
-        let data = try value.tensorData()
+        guard let data = try value.tensorData() else {
+            throw MeanVC2ONNXError.invalidTensor("ONNX tensor data is unavailable")
+        }
         let count = data.length / MemoryLayout<Float>.size
         guard count > 0 else { return [] }
         let pointer = data.bytes.assumingMemoryBound(to: Float.self)
