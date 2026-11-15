@@ -44,5 +44,19 @@ jobs:
             -scheme MeanVC2 \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             build
+      - name: Run Vocos inference smoke test in iPhone Simulator
+        run: |
+          set -euo pipefail
+          UDID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; data=json.load(sys.stdin); devices=[d for group in data["devices"].values() for d in group if d.get("isAvailable") and d["name"].startswith("iPhone")]; print(devices[0]["udid"] if devices else "")')"
+          test -n "$UDID"
+          xcrun simctl boot "$UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$UDID" -b
+          APP_PATH="build/DerivedData/Build/Products/Debug-iphonesimulator/MeanVC2.app"
+          test -d "$APP_PATH"
+          xcrun simctl install "$UDID" "$APP_PATH"
+          xcrun simctl launch "$UDID" jp.yanyantukebo.meanvc2
+          sleep 15
+          xcrun simctl spawn "$UDID" log show --last 2m --style compact --predicate 'process == "MeanVC2" AND eventMessage CONTAINS "VOCOS_SMOKE_TEST_PASSED"' | grep "VOCOS_SMOKE_TEST_PASSED"
