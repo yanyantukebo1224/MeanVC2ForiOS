@@ -62,7 +62,12 @@ jobs:
           test -d "$APP_PATH"
           xcrun simctl install "$UDID" "$APP_PATH"
           xcrun simctl launch "$UDID" jp.yanyantukebo.meanvc2
-          sleep 12
+          sleep 20
+          xcrun simctl spawn "$UDID" log show --last 3m --style compact --predicate 'subsystem == "jp.yanyantukebo.meanvc2"' || true
           DATA_PATH="$(xcrun simctl get_app_container "$UDID" jp.yanyantukebo.meanvc2 data)"
-          test -f "$DATA_PATH/Documents/vocos-smoke-test.ok"
+          if [ ! -f "$DATA_PATH/Documents/vocos-smoke-test.ok" ]; then
+            echo "Vocos smoke marker missing; app container: $DATA_PATH"
+            xcrun simctl spawn "$UDID" launchctl list | grep -i meanvc2 || true
+            exit 1
+          fi
           test "$(cat "$DATA_PATH/Documents/vocos-smoke-test.ok")" = "PASS"
