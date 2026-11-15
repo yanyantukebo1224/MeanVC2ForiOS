@@ -7,7 +7,7 @@ import OnnxRuntimeBindings
 final class ONNXRuntimeEnvironment {
     static let shared: ORTEnv = {
         do {
-            return try ORTEnv(loggingLevel: .warning)
+            return try ORTEnv(loggingLevel: ORTLoggingLevel.warning)
         } catch {
             fatalError("Unable to initialize ONNX Runtime: \(error)")
         }
@@ -16,7 +16,7 @@ final class ONNXRuntimeEnvironment {
     static func makeSession(modelURL: URL, threads: Int = 2) throws -> ORTSession {
         let options = try ORTSessionOptions()
         try options.setIntraOpNumThreads(Int32(threads))
-        try options.setGraphOptimizationLevel(.all)
+        try options.setGraphOptimizationLevel(ORTGraphOptimizationLevel.all)
         return try ORTSession(
             env: shared,
             modelPath: modelURL.path,
