@@ -53,7 +53,17 @@ class ASRChunkWithPos(torch.nn.Module):
         empty_mask = torch.zeros((0, 0, 0), dtype=torch.bool, device=xs.device)
         new_att_caches = []
         new_cnn_caches = []
-        for index in range(6):
+        # TorchScript's ModuleList wrapper does not implement __getitem__ in Python.
+        # Its named child modules remain addressable by their constant numeric names.
+        layers = (
+            getattr(self.encoder.encoders, "0"),
+            getattr(self.encoder.encoders, "1"),
+            getattr(self.encoder.encoders, "2"),
+            getattr(self.encoder.encoders, "3"),
+            getattr(self.encoder.encoders, "4"),
+            getattr(self.encoder.encoders, "5")
+        )
+        for index, layer in enumerate(layers):
             if elayers > 0:
                 layer_cache = att_cache[index:index + 1]
                 key_value_size = att_cache.size(-1) // 2
@@ -69,7 +79,7 @@ class ASRChunkWithPos(torch.nn.Module):
             else:
                 layer_cnn_cache = cnn_cache
 
-            xs, _, new_kv_cache, new_cnn_cache = self.encoder.encoders[index](
+            xs, _, new_kv_cache, new_cnn_cache = layer(
                 xs,
                 empty_mask,
                 pos_emb,
