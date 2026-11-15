@@ -12,7 +12,7 @@ enum VocosDecoderError: Error {
 /// The learned Vocos backbone and spectral projection are exported to Core ML;
 /// this overlap-add stage is native Accelerate code.
 enum VocosISTFT {
-    enum Padding {
+    enum Padding: Equatable {
         case center
         case same
     }
