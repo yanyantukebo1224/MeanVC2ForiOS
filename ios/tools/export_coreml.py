@@ -38,6 +38,9 @@ def export_coreml(module, inputs, name, ct):
     with torch.no_grad():
         traced = torch.jit.trace(module, inputs, strict=False)
         expected = traced(*inputs)
+        # Freeze specializes Optional arguments (e.g. Vocos conditioning=None)
+        # and removes TorchScript prim::Uninitialized branches before Core ML.
+        traced = torch.jit.freeze(traced.eval())
     mlmodel = ct.convert(
         traced,
         source="pytorch",
