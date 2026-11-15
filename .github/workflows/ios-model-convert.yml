@@ -45,13 +45,23 @@ jobs:
           shutil.copy2(src, target)
           print(f"vocos.pt: {target.stat().st_size} bytes")
           PY
+      - name: Inspect Vocos TorchScript graph
+        run: python ios/tools/inspect_vocos.py
+      - name: Upload Vocos graph diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: meanvc2-vocos-graph-diagnostics
+          path: ios/Diagnostics/vocos_torchscript_graph.txt
+          if-no-files-found: error
+          retention-days: 14
       - name: Export Vocos and compare outputs
         run: python ios/tools/export_coreml.py --skip-asr
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: meanvc2-vocos-coreml
           path: ios/Models/MeanVC2Vocos.mlpackage
-          if-no-files-found: error
+          if-no-files-found: ignore
           retention-days: 14
 
   export-asr:
