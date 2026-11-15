@@ -26,12 +26,19 @@ class ASRChunk(torch.nn.Module):
         )
         return bn, next_att, next_cnn
 
-class VocosDecode(torch.nn.Module):
+class VocosSpectrogram(torch.nn.Module):
+    """Export Vocos' learned spectral head; native iOS performs the final iSTFT."""
     def __init__(self, model):
         super().__init__()
         self.model = model
     def forward(self, mel):
-        return self.model.decode(mel)
+        hidden = self.model.backbone(mel)
+        projected = self.model.head.out(hidden).transpose(1, 2)
+        magnitude, phase = projected.chunk(2, dim=1)
+        magnitude = torch.exp(magnitude).clamp(max=1e2)
+        real = magnitude * torch.cos(phase)
+        imag = magnitude * torch.sin(phase)
+        return torch.stack((real, imag), dim=-1)
 
 def export_coreml(module, inputs, name, ct):
     module.eval()
@@ -100,7 +107,18 @@ def main():
             raise FileNotFoundError(VOCOS)
         vocos = torch.jit.load(str(VOCOS), map_location="cpu").eval()
         mel = torch.zeros(1, 80, 16)
-        exported["vocoder"] = export_coreml(VocosDecode(vocos), (mel,), "MeanVC2Vocos", ct)
+        spectral = VocosSpectrogram(vocos).eval()
+        with torch.no_grad():
+            real_imag = spectral(mel)
+            reconstructed = vocos.head.istft(torch.complex(real_imag[..., 0], real_imag[..., 1]))
+            reference = vocos.decode(mel)
+            if reconstructed.shape != reference.shape or not torch.allclose(
+                reconstructed, reference, rtol=1e-5, atol=1e-6
+            ):
+                raise RuntimeError("Vocos spectral-head + iSTFT parity check failed")
+        exported["vocoder_spectrogram"] = export_coreml(
+            spectral, (mel,), "MeanVC2VocosSpectrogram", ct
+        )
 
     manifest = {
         "format_version": 1,
@@ -111,7 +129,7 @@ def main():
         "not_exported": [
             "WavLM+ECAPA speaker encoder",
             "DiT/CFM decoder with per-layer streaming KV cache",
-            "end-to-end native streaming orchestration"
+            "native iSTFT synthesis and end-to-end streaming orchestration"
         ],
         "note": "Only components listed in exported_components are available. This is not a complete voice-conversion model."
     }
