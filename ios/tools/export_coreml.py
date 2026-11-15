@@ -22,7 +22,7 @@ class ASRChunk(torch.nn.Module):
         self.model = model
     def forward(self, fbank, offset, required_cache_size, att_cache, cnn_cache):
         bn, next_att, next_cnn = self.model(
-            fbank, offset, required_cache_size, att_cache, cnn_cache
+            fbank, offset.reshape(()), required_cache_size.reshape(()), att_cache, cnn_cache
         )
         return bn, next_att, next_cnn
 
@@ -85,8 +85,8 @@ def main():
         asr = torch.jit.load(str(asr_path), map_location="cpu").eval()
         sample = (
             torch.zeros(1, 11, 80),
-            torch.tensor(4, dtype=torch.int64),
-            torch.tensor(4, dtype=torch.int64),
+            torch.tensor([4], dtype=torch.int64),
+            torch.tensor([4], dtype=torch.int64),
             torch.zeros(6, 4, 4, 128),
             torch.zeros(6, 1, 256, 8),
         )
