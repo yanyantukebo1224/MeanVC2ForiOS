@@ -151,7 +151,7 @@ struct ContentView: View {
             }
             Button("あとで", role: .cancel) { }
         } message: {
-            Text("初回のみ約387MBの話者モデルをダウンロードします。本人の許可を得た音声だけを登録してください。")
+            Text("初回のみ約387MBの話者モデルをダウンロードします。3秒以上のはっきりした音声を使い、本人の許可を得た音声だけを登録してください。")
         }
         .task {
             await prepareConversionEngine()
@@ -342,7 +342,7 @@ struct ContentView: View {
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.white)
                             .lineLimit(1)
-                        Text(referenceURL == nil ? "音声ファイルを読み込む" : "タップして別の音声に変更")
+                        Text(referenceURL == nil ? "3秒以上の音声ファイルを読み込む" : "タップして別の音声に変更")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.white.opacity(0.42))
                     }
