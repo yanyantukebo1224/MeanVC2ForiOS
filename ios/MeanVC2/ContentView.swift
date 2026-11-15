@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import os
 
 struct ContentView: View {
     @State private var referenceURL: URL?
@@ -10,6 +11,7 @@ struct ContentView: View {
     @State private var vocosDecoder: VocosCoreMLDecoder?
 
     private let accent = Color(red: 0.63, green: 0.48, blue: 1.0)
+    private let modelLogger = Logger(subsystem: "jp.yanyantukebo.meanvc2", category: "Vocos")
 
     var body: some View {
         ZStack {
@@ -105,8 +107,10 @@ struct ContentView: View {
                 }
                 vocosDecoder = decoder
                 vocosReady = true
+                modelLogger.info("VOCOS_SMOKE_TEST_PASSED waveformSamples=\(sample.count)")
             } catch {
                 vocosError = "Vocos推論テストに失敗しました: \(error.localizedDescription)"
+                modelLogger.error("VOCOS_SMOKE_TEST_FAILED: \(error.localizedDescription)")
             }
         }
     }
