@@ -6,9 +6,12 @@ struct ContentView: View {
     @State private var referenceURL: URL?
     @State private var showingImporter = false
     @State private var showingModelInfo = false
-    @State private var vocosReady = false
-    @State private var vocosError: String?
-    @State private var vocosDecoder: VocosCoreMLDecoder?
+    @State private var showingSpeakerConfirmation = false
+    @State private var engineReady = false
+    @State private var targetReady = false
+    @State private var modelStatus = "モデルを準備しています"
+    @State private var modelError: String?
+    @State private var stream: MeanVC2ONNXStream?
 
     private let accent = Color(red: 0.63, green: 0.48, blue: 1.0)
     private let modelLogger = Logger(subsystem: "jp.yanyantukebo.meanvc2", category: "Vocos")
@@ -51,7 +54,7 @@ struct ContentView: View {
                         Text("変換エンジンの状態")
                             .font(.system(size: 15, weight: .semibold))
                         Spacer()
-                        Text(vocosReady ? "Vocos OK" : "準備中")
+                        Text(engineReady ? "ONNX READY" : "準備中")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(accent)
                         Image(systemName: "chevron.right")
@@ -67,9 +70,10 @@ struct ContentView: View {
 
                 Spacer(minLength: 26)
 
-                Text("モデルをiOS向けに最適化しています")
+                Text(targetReady ? "変換先の声を登録しました" : modelStatus)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(.white.opacity(0.4))
+                    .multilineTextAlignment(.center)
                     .padding(.bottom, 18)
             }
             .padding(.horizontal, 22)
@@ -79,8 +83,9 @@ struct ContentView: View {
             allowedContentTypes: [.audio, .wav, .mpeg4Audio],
             allowsMultipleSelection: false
         ) { result in
-            if case .success(let urls) = result {
-                referenceURL = urls.first
+            if case .success(let urls) = result, let url = urls.first {
+                referenceURL = url
+                showingSpeakerConfirmation = true
             }
         }
         .alert("変換エンジン", isPresented: $showingModelInfo) {
@@ -121,6 +126,91 @@ struct ContentView: View {
                 vocosError = "Vocos推論テストに失敗しました: \(error.localizedDescription)"
                 modelLogger.error("VOCOS_SMOKE_TEST_FAILED: \(error.localizedDescription)")
             }
+        }
+    }
+
+    private func modelsDirectory() throws -> URL {
+        let base = try FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        return base.appendingPathComponent("MeanVC2Models", isDirectory: true)
+    }
+
+    @MainActor
+    private func prepareConversionEngine() async {
+        guard stream == nil else { return }
+        modelStatus = "変換モデルをダウンロードしています"
+        do {
+            let directory = try modelsDirectory()
+            let store = MeanVC2ModelStore(root: directory)
+            _ = try await store.ensureConversionModels()
+            let runner = try MeanVC2ONNXStream(modelDirectory: directory)
+            try runner.setTargetEmbedding([Float](repeating: 0, count: 256))
+
+            var smokeOutput: [Float] = []
+            for _ in 0..<8 {
+                smokeOutput.append(contentsOf: try runner.process(
+                    [Float](repeating: 0, count: 2_560)
+                ))
+            }
+            guard !smokeOutput.isEmpty, smokeOutput.allSatisfy(\\.isFinite) else {
+                throw MeanVC2ONNXError.invalidTensor("ONNX streaming smoke test returned no valid audio")
+            }
+            stream = runner
+            engineReady = true
+            modelStatus = "変換モデル準備完了"
+            modelLogger.info("ONNX_PIPELINE_SMOKE_TEST_PASSED samples=\\(smokeOutput.count)")
+            #if DEBUG
+            let documents = FileManager.default.urls(
+                for: .documentDirectory, in: .userDomainMask
+            ).first!
+            try? Data("PASS".utf8).write(
+                to: documents.appendingPathComponent("onnx-pipeline-smoke-test.ok"),
+                options: .atomic
+            )
+            #endif
+        } catch {
+            modelError = "ONNXモデルの準備に失敗しました: \\(error.localizedDescription)"
+            modelStatus = "モデル準備に失敗"
+            modelLogger.error("ONNX_PIPELINE_SMOKE_TEST_FAILED: \\(error.localizedDescription)")
+        }
+    }
+
+    @MainActor
+    private func registerTargetVoice(from url: URL) async {
+        guard engineReady else {
+            modelStatus = "先に変換モデルの準備を完了してください"
+            return
+        }
+        let didStartAccess = url.startAccessingSecurityScopedResource()
+        defer {
+            if didStartAccess { url.stopAccessingSecurityScopedResource() }
+        }
+        modelStatus = "話者モデルを準備しています"
+        do {
+            let directory = try modelsDirectory()
+            let store = MeanVC2ModelStore(root: directory)
+            _ = try await store.ensureConversionModels(includeSpeakerEncoder: true) { file in
+                Task { @MainActor in
+                    modelStatus = "ダウンロード中: \\(file)"
+                }
+            }
+            modelStatus = "参照音声を解析しています"
+            let waveform = try MeanVC2AudioFile.loadMono16k(from: url)
+            let speakerModel = directory.appendingPathComponent("speaker/speaker.int8.onnx")
+            let encoder = try MeanVC2SpeakerEncoder(modelURL: speakerModel)
+            let embedding = try encoder.embedding(for: waveform)
+            try stream?.setTargetEmbedding(embedding)
+            targetReady = true
+            modelStatus = "変換先の声を登録しました"
+        } catch {
+            targetReady = false
+            modelStatus = "話者登録に失敗"
+            modelError = "話者登録に失敗しました: \\(error.localizedDescription)"
+            showingModelInfo = true
         }
     }
 
