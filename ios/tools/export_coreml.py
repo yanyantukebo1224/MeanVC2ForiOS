@@ -116,6 +116,22 @@ def export_coreml(module, inputs, name, ct):
         # Freeze specializes Optional arguments (e.g. Vocos conditioning=None)
         # and removes TorchScript prim::Uninitialized branches before Core ML.
         traced = torch.jit.freeze(traced.eval())
+        if name == "MeanVC2ASR":
+            diagnostics = ROOT / "ios" / "Diagnostics"
+            diagnostics.mkdir(parents=True, exist_ok=True)
+            graph = traced.inlined_graph
+            (diagnostics / "MeanVC2ASR_traced_graph.txt").write_text(str(graph), encoding="utf-8")
+            int_nodes = []
+            for node in graph.nodes():
+                if node.kind() == "aten::Int":
+                    int_nodes.append(
+                        f"output={node.output().debugName()} source={node.sourceRange()} node={node}"
+                    )
+            (diagnostics / "MeanVC2ASR_int_nodes.txt").write_text(
+                "\\n\\n".join(int_nodes), encoding="utf-8"
+            )
+            print("ASR aten::Int nodes:")
+            print("\\n\\n".join(int_nodes))
     mlmodel = ct.convert(
         traced,
         source="pytorch",
