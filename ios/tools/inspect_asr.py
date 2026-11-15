@@ -14,7 +14,21 @@ lines = [
     str(model.forward.graph),
     "=== inlined graph ===",
     str(model.inlined_graph),
+    "=== nested module methods ===",
 ]
+for name, module in model.named_modules():
+    try:
+        methods = module._c._method_names()
+    except Exception:
+        methods = []
+    if methods or "encoder" in name or "embed" in name or "pos_enc" in name:
+        lines.append(f"{name}: type={type(module).__name__}, methods={methods}")
+        for method_name in methods:
+            try:
+                method = module._c._get_method(method_name)
+                lines.append(f"  {method_name} schema: {method.schema}")
+            except Exception as error:
+                lines.append(f"  {method_name} schema error: {error}")
 
 # Verify whether the encoder's positional offset can be reset without changing
 # the streaming representation. If this fails, a fixed-offset Core ML export
