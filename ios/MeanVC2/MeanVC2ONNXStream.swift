@@ -380,8 +380,9 @@ final class MeanVC2ONNXStream: @unchecked Sendable {
     }
 
     private func resetKeyValueCaches() throws {
-        let empty = try ORTTensor.float([], shape: [1, 2, 0, 64])
-        keyValueCaches = (0..<(2 * Self.layerCount)).map { _ in empty }
+        keyValueCaches = try (0..<(2 * Self.layerCount)).map { _ in
+            try ORTTensor.float([], shape: [1, 2, 0, 64])
+        }
     }
 
     private func gaussianNoise(count: Int) -> [Float] {
@@ -417,8 +418,9 @@ final class MeanVC2ONNXStream: @unchecked Sendable {
             return Array(repeating: values, count: outputRows).flatMap { $0 }
         }
         var output = [Float](repeating: 0, count: outputRows * columns)
+        let scale = Float(rows - 1) / Float(outputRows - 1)
         for row in 0..<outputRows {
-            let position = Float(row) * Float(rows - 1) / Float(outputRows - 1)
+            let position = Float(row) * scale
             let lower = min(Int(floor(position)), rows - 2)
             let weight = position - Float(lower)
             for column in 0..<columns {
