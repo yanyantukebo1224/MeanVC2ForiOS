@@ -12,11 +12,17 @@ enum VocosDecoderError: Error {
 /// The learned Vocos backbone and spectral projection are exported to Core ML;
 /// this overlap-add stage is native Accelerate code.
 enum VocosISTFT {
+    enum Padding {
+        case center
+        case same
+    }
+
     static func decode(
         realImag: [Float],
         frameCount: Int,
-        fftSize: Int = 1024,
-        hopLength: Int = 160
+        fftSize: Int = 640,
+        hopLength: Int = 160,
+        paddingMode: Padding = .center
     ) throws -> [Float] {
         let frequencyBins = fftSize / 2 + 1
         guard frameCount > 0,
@@ -38,7 +44,9 @@ enum VocosISTFT {
         let window = (0..<fftSize).map { index -> Float in
             0.5 - 0.5 * cos(2.0 * Float.pi * Float(index) / Float(fftSize))
         }
-        let padding = (fftSize - hopLength) / 2
+        let trimPadding = paddingMode == .center
+            ? fftSize / 2
+            : (fftSize - hopLength) / 2
         let outputSize = (frameCount - 1) * hopLength + fftSize
         var output = [Float](repeating: 0, count: outputSize)
         var envelope = [Float](repeating: 0, count: outputSize)
@@ -91,8 +99,8 @@ enum VocosISTFT {
         }
 
         // MeanVC2's Vocos checkpoint uses same padding.
-        let lower = padding
-        let upper = outputSize - padding
+        let lower = trimPadding
+        let upper = outputSize - trimPadding
         guard upper > lower else { return [] }
 
         var waveform = [Float](repeating: 0, count: upper - lower)
@@ -111,11 +119,13 @@ final class VocosCoreMLDecoder {
     private let outputName: String
     private let fftSize: Int
     private let hopLength: Int
+    private let paddingMode: VocosISTFT.Padding
 
     init(
         modelURL: URL,
-        fftSize: Int = 1024,
-        hopLength: Int = 160
+        fftSize: Int = 640,
+        hopLength: Int = 160,
+        paddingMode: VocosISTFT.Padding = .center
     ) throws {
         let configuration = MLModelConfiguration()
         configuration.computeUnits = .all
@@ -129,6 +139,7 @@ final class VocosCoreMLDecoder {
         self.outputName = output
         self.fftSize = fftSize
         self.hopLength = hopLength
+        self.paddingMode = paddingMode
     }
 
     /// mel is channel-major [80, frames], normalized exactly as MeanVC2 runtime expects.
@@ -170,7 +181,8 @@ final class VocosCoreMLDecoder {
             realImag: realImag,
             frameCount: outputFrames,
             fftSize: fftSize,
-            hopLength: hopLength
+            hopLength: hopLength,
+            paddingMode: paddingMode
         )
     }
 }
