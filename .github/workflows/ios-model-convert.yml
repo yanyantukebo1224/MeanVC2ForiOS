@@ -19,7 +19,42 @@ permissions:
   contents: read
 
 jobs:
-  export-coreml:
+  export-vocos:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ios-app-prototype
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install conversion dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "torch==2.5.0" "torchaudio==2.5.0" "coremltools==8.3.0" "huggingface_hub" "safetensors" numpy
+      - name: Download official Vocos checkpoint
+        run: |
+          python - <<'PY'
+          from huggingface_hub import hf_hub_download
+          from pathlib import Path
+          import shutil
+          target = Path("ckpts/vocos/vocos.pt")
+          target.parent.mkdir(parents=True, exist_ok=True)
+          src = hf_hub_download(repo_id="ASLP-lab/MeanVC2", filename="vocos.pt")
+          shutil.copy2(src, target)
+          print(f"vocos.pt: {target.stat().st_size} bytes")
+          PY
+      - name: Export Vocos and compare outputs
+        run: python ios/tools/export_coreml.py --skip-asr
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meanvc2-vocos-coreml
+          path: ios/Models/MeanVC2Vocos.mlpackage
+          if-no-files-found: error
+          retention-days: 14
+
+  export-asr:
     runs-on: macos-15
     timeout-minutes: 120
     steps:
@@ -29,32 +64,27 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
       - name: Install conversion dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install "torch==2.5.1" "torchaudio==2.5.1" "coremltools==8.3.0" "huggingface_hub" "safetensors"
-      - name: Download official MeanVC2 checkpoints
+          python -m pip install "torch==2.5.0" "torchaudio==2.5.0" "coremltools==8.3.0" "huggingface_hub" "safetensors" numpy
+      - name: Download official Fast-U2++ checkpoint
         run: |
           python - <<'PY'
           from huggingface_hub import hf_hub_download
           from pathlib import Path
           import shutil
-          files = {
-            "fastu2pp_80ms.pt": Path("preprocess/ckpts/fastu2pp_80ms.pt"),
-            "vocos.pt": Path("ckpts/vocos/vocos.pt"),
-          }
-          for name, target in files.items():
-            target.parent.mkdir(parents=True, exist_ok=True)
-            src = hf_hub_download(repo_id="ASLP-lab/MeanVC2", filename=name)
-            shutil.copy2(src, target)
-            print(f"{name}: {target.stat().st_size} bytes")
+          target = Path("preprocess/ckpts/fastu2pp_80ms.pt")
+          target.parent.mkdir(parents=True, exist_ok=True)
+          src = hf_hub_download(repo_id="ASLP-lab/MeanVC2", filename="fastu2pp_80ms.pt")
+          shutil.copy2(src, target)
+          print(f"fastu2pp_80ms.pt: {target.stat().st_size} bytes")
           PY
-      - name: Export supported components to Core ML
-        run: python ios/tools/export_coreml.py
+      - name: Export ASR and compare outputs
+        run: python ios/tools/export_coreml.py --skip-vocoder
       - uses: actions/upload-artifact@v4
         with:
-          name: meanvc2-coreml-40ms-partial
-          path: ios/Models/
+          name: meanvc2-asr-coreml
+          path: ios/Models/MeanVC2ASR.mlpackage
           if-no-files-found: error
           retention-days: 14
