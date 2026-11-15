@@ -113,7 +113,7 @@ struct ContentView: View {
 
     private var waveform: some View {
         HStack(alignment: .center, spacing: 5) {
-            ForEach(Array([18.0, 30, 43, 25, 54, 34, 20, 46, 60, 29, 42, 18, 34, 51, 24, 39, 17] .enumerated()), id: \.offset) { _, height in
+            ForEach(Array([18.0, 30, 43, 25, 54, 34, 20, 46, 60, 29, 42, 18, 34, 51, 24, 39, 17].enumerated()), id: \.offset) { item in
                 Capsule()
                     .fill(
                         LinearGradient(
@@ -122,7 +122,7 @@ struct ContentView: View {
                             endPoint: .bottom
                         )
                     )
-                    .frame(width: 4, height: height)
+                    .frame(width: 4, height: item.element)
             }
         }
         .frame(height: 64)
