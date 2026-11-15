@@ -180,6 +180,7 @@ struct ContentView: View {
             let store = MeanVC2ModelStore(root: directory)
             _ = try await store.ensureConversionModels()
             let runner = try MeanVC2ONNXStream(modelDirectory: directory)
+            runner.noiseProvider = { frameCount in [Float](repeating: 0, count: frameCount * 80) }
             try runner.setTargetEmbedding([Float](repeating: 0, count: 256))
 
             var smokeOutput: [Float] = []
@@ -201,6 +202,13 @@ struct ContentView: View {
             ).first!
             try? Data("PASS".utf8).write(
                 to: documents.appendingPathComponent("onnx-pipeline-smoke-test.ok"),
+                options: .atomic
+            )
+            let waveformData = smokeOutput.withUnsafeBufferPointer { buffer in
+                Data(bytes: buffer.baseAddress!, count: buffer.count * MemoryLayout<Float>.size)
+            }
+            try? waveformData.write(
+                to: documents.appendingPathComponent("onnx-pipeline-smoke-output.f32"),
                 options: .atomic
             )
             #endif
