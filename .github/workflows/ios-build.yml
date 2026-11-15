@@ -1,5 +1,9 @@
 name: iOS build
 
+concurrency:
+  group: meanvc2-ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [ios-app-prototype]
