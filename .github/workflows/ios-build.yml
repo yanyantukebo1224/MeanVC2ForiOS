@@ -1,0 +1,30 @@
+name: iOS build
+
+on:
+  push:
+    branches: [ios-app-prototype]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios-build.yml"
+  pull_request:
+    branches: [ios-app-prototype]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios-build.yml"
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Build iOS Simulator app
+        run: |
+          xcodebuild \
+            -project ios/MeanVC2/MeanVC2.xcodeproj \
+            -scheme MeanVC2 \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
