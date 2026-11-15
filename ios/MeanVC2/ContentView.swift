@@ -14,7 +14,7 @@ struct ContentView: View {
     @State private var stream: MeanVC2ONNXStream?
 
     private let accent = Color(red: 0.63, green: 0.48, blue: 1.0)
-    private let modelLogger = Logger(subsystem: "jp.yanyantukebo.meanvc2", category: "Vocos")
+    private let modelLogger = Logger(subsystem: "jp.yanyantukebo.meanvc2", category: "Engine")
 
     var body: some View {
         ZStack {
@@ -91,41 +91,24 @@ struct ContentView: View {
         .alert("変換エンジン", isPresented: $showingModelInfo) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text(vocosError ?? "VocosのCore ML推論とiOS側iSTFTを確認しました。Fast-U2++ ASR、話者特徴抽出、DiT、リアルタイム音声接続は開発中です。")
+            Text(modelError ?? "Fast-U2++ ASR、DiT、VocosをONNX Runtimeで実行します。変換モデルは端末内に保存し、推論はオフラインで行います。")
+        }
+        .confirmationDialog(
+            "話者モデルの準備",
+            isPresented: $showingSpeakerConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("ダウンロードして登録") {
+                if let url = referenceURL {
+                    Task { await registerTargetVoice(from: url) }
+                }
+            }
+            Button("あとで", role: .cancel) { }
+        } message: {
+            Text("初回のみ約387MBの話者モデルをダウンロードします。本人の許可を得た音声だけを登録してください。")
         }
         .task {
-            guard let modelURL = Bundle.main.url(
-                forResource: "MeanVC2VocosSpectrogram",
-                withExtension: "mlmodelc"
-            ) else {
-                vocosError = "Vocosモデルがアプリ内に見つかりません。"
-                return
-            }
-            do {
-                let decoder = try VocosCoreMLDecoder(modelURL: modelURL)
-                let sample = try decoder.decode(
-                    mel: [Float](repeating: 0, count: 80 * 16),
-                    frameCount: 16
-                )
-                guard sample.count == 2400, sample.allSatisfy(\.isFinite) else {
-                    throw VocosDecoderError.invalidModelOutput
-                }
-                vocosDecoder = decoder
-                vocosReady = true
-                modelLogger.info("VOCOS_SMOKE_TEST_PASSED waveformSamples=\(sample.count)")
-                #if DEBUG
-                if let documents = FileManager.default.urls(
-                    for: .documentDirectory,
-                    in: .userDomainMask
-                ).first {
-                    let marker = documents.appendingPathComponent("vocos-smoke-test.ok")
-                    try? Data("PASS".utf8).write(to: marker, options: .atomic)
-                }
-                #endif
-            } catch {
-                vocosError = "Vocos推論テストに失敗しました: \(error.localizedDescription)"
-                modelLogger.error("VOCOS_SMOKE_TEST_FAILED: \(error.localizedDescription)")
-            }
+            await prepareConversionEngine()
         }
     }
 
@@ -156,13 +139,13 @@ struct ContentView: View {
                     [Float](repeating: 0, count: 2_560)
                 ))
             }
-            guard !smokeOutput.isEmpty, smokeOutput.allSatisfy(\\.isFinite) else {
+            guard !smokeOutput.isEmpty, smokeOutput.allSatisfy(\.isFinite) else {
                 throw MeanVC2ONNXError.invalidTensor("ONNX streaming smoke test returned no valid audio")
             }
             stream = runner
             engineReady = true
             modelStatus = "変換モデル準備完了"
-            modelLogger.info("ONNX_PIPELINE_SMOKE_TEST_PASSED samples=\\(smokeOutput.count)")
+            modelLogger.info("ONNX_PIPELINE_SMOKE_TEST_PASSED samples=\(smokeOutput.count)")
             #if DEBUG
             let documents = FileManager.default.urls(
                 for: .documentDirectory, in: .userDomainMask
@@ -173,9 +156,9 @@ struct ContentView: View {
             )
             #endif
         } catch {
-            modelError = "ONNXモデルの準備に失敗しました: \\(error.localizedDescription)"
+            modelError = "ONNXモデルの準備に失敗しました: \(error.localizedDescription)"
             modelStatus = "モデル準備に失敗"
-            modelLogger.error("ONNX_PIPELINE_SMOKE_TEST_FAILED: \\(error.localizedDescription)")
+            modelLogger.error("ONNX_PIPELINE_SMOKE_TEST_FAILED: \(error.localizedDescription)")
         }
     }
 
@@ -189,13 +172,14 @@ struct ContentView: View {
         defer {
             if didStartAccess { url.stopAccessingSecurityScopedResource() }
         }
+
         modelStatus = "話者モデルを準備しています"
         do {
             let directory = try modelsDirectory()
             let store = MeanVC2ModelStore(root: directory)
             _ = try await store.ensureConversionModels(includeSpeakerEncoder: true) { file in
                 Task { @MainActor in
-                    modelStatus = "ダウンロード中: \\(file)"
+                    modelStatus = "ダウンロード中: \(file)"
                 }
             }
             modelStatus = "参照音声を解析しています"
@@ -209,7 +193,7 @@ struct ContentView: View {
         } catch {
             targetReady = false
             modelStatus = "話者登録に失敗"
-            modelError = "話者登録に失敗しました: \\(error.localizedDescription)"
+            modelError = "話者登録に失敗しました: \(error.localizedDescription)"
             showingModelInfo = true
         }
     }
