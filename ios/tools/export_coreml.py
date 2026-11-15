@@ -51,9 +51,23 @@ def export_coreml(module, inputs, name, ct):
     OUT.mkdir(parents=True, exist_ok=True)
     destination = OUT / f"{name}.mlpackage"
     mlmodel.save(str(destination))
-    # Reload the saved package and verify it is a valid Core ML model.
-    ct.models.MLModel(str(destination), compute_units=ct.ComputeUnit.CPU_ONLY)
-    print(f"EXPORTED {destination}")
+    # Reload and run a numerical parity check on CPU before accepting the artifact.
+    loaded = ct.models.MLModel(str(destination), compute_units=ct.ComputeUnit.CPU_ONLY)
+    input_names = [item.name for item in mlmodel.input_description]
+    prediction = loaded.predict({n: x.detach().cpu().numpy() for n, x in zip(input_names, inputs)})
+    output_names = list(mlmodel.output_description)
+    expected_values = expected if isinstance(expected, (tuple, list)) else (expected,)
+    if len(output_names) != len(expected_values):
+        raise RuntimeError(f"{name}: output count mismatch: {len(output_names)} != {len(expected_values)}")
+    for output_name, reference in zip(output_names, expected_values):
+        actual = np.asarray(prediction[output_name])
+        reference = reference.detach().cpu().numpy()
+        if actual.shape != reference.shape:
+            raise RuntimeError(f"{name}/{output_name}: shape mismatch {actual.shape} != {reference.shape}")
+        if not np.allclose(actual, reference, rtol=5e-2, atol=5e-2, equal_nan=False):
+            error = float(np.max(np.abs(actual - reference)))
+            raise RuntimeError(f"{name}/{output_name}: Core ML parity failed (max abs error {error})")
+    print(f"EXPORTED + PARITY OK {destination}")
     return str(destination)
 
 def main():
