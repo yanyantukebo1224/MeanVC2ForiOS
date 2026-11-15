@@ -45,6 +45,17 @@ jobs:
           shutil.copy2(src, target)
           print(f"vocos.pt: {target.stat().st_size} bytes")
           PY
+      - name: Generate PyTorch iSTFT reference fixture
+        run: python ios/tools/export_vocos_istft_fixture.py
+      - name: Validate native Accelerate iSTFT against PyTorch
+        run: |
+          swiftc -O -framework Accelerate -framework CoreML \
+            ios/MeanVC2/VocosCoreMLDecoder.swift \
+            ios/tools/VocosISTFTParity.swift \
+            -o /tmp/vocos_istft_parity
+          /tmp/vocos_istft_parity \
+            ios/Diagnostics/vocos_real_imag.f32 \
+            ios/Diagnostics/vocos_waveform.f32
       - name: Inspect Vocos TorchScript graph
         run: python ios/tools/inspect_vocos.py
       - name: Upload Vocos graph diagnostics
@@ -60,7 +71,7 @@ jobs:
         if: always()
         with:
           name: meanvc2-vocos-spectrogram-coreml
-          path: ios/Models/MeanVC2VocosSpectrogram.mlpackage
+          path: ios/Models/
           if-no-files-found: ignore
           retention-days: 14
 
