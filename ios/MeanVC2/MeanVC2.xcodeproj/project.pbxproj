@@ -83,6 +83,7 @@
 /* Begin XCConfigurationList section */
 		F10000000000000000000001 /* Build configuration list for PBXProject */ = {isa = XCConfigurationList; buildConfigurations = (110000000000000000000001 /* Debug */, 110000000000000000000002 /* Release */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 		F10000000000000000000002 /* Build configuration list for PBXNativeTarget "MeanVC2" */ = {isa = XCConfigurationList; buildConfigurations = (110000000000000000000003 /* Debug */, 110000000000000000000004 /* Release */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		F10000000000000000000003 /* Build configuration list for PBXProject "MeanVC2" */ = {isa = XCConfigurationList; buildConfigurations = (110000000000000000000001 /* Debug */, 110000000000000000000002 /* Release */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 	};
 	rootObject = E10000000000000000000002 /* Project object */;
