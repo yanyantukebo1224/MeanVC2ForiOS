@@ -373,7 +373,7 @@ final class MeanVC2ONNXStream {
             outputNames: outputs,
             runOptions: nil
         ) else {
-            throw MeanVC2ONNXError.invalidTensor("ONNX Runtime returned no outputs for \\(name)")
+            throw MeanVC2ONNXError.invalidTensor("ONNX Runtime returned no outputs for \(name)")
         }
         return result
     }
