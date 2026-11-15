@@ -81,7 +81,7 @@ struct ContentView: View {
         .alert("変換エンジン", isPresented: $showingModelInfo) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("現在はiOSアプリのUIプロトタイプです。MeanVC2本体（ASR・話者特徴抽出・DiT・Vocos）のCore ML / Core Audio移植はこれから実装します。")
+            Text("VocosのCore ML変換とiOS側iSTFTは実装済みです。Fast-U2++ ASR、話者特徴抽出、DiT、リアルタイム音声接続は開発中です。")
         }
     }
 
