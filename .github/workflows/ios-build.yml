@@ -19,15 +19,15 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
       - name: Download validated Vocos Core ML package
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          mkdir -p ios/MeanVC2/Models
-          # This run produced the validated Vocos spectral package and passed
-          # the PyTorch-vs-iSTFT numerical parity check.
-          gh run download 43672245973 --name meanvc2-vocos-spectrogram-coreml --dir ios/MeanVC2/Models
-          test -d ios/MeanVC2/Models/MeanVC2VocosSpectrogram.mlpackage
+        uses: actions/download-artifact@v4
+        with:
+          name: meanvc2-vocos-spectrogram-coreml
+          repository: yanyantukebo1224/MeanVC2ForiOS
+          run-id: 43672245973
+          github-token: ${{ github.token }}
+          path: ios/MeanVC2/Models
+      - name: Verify Vocos package
+        run: test -d ios/MeanVC2/Models/MeanVC2VocosSpectrogram.mlpackage
       - name: Build iOS Simulator app
         run: |
           xcodebuild \
