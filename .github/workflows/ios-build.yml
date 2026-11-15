@@ -33,6 +33,22 @@ jobs:
             -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             build
+      - name: Download and verify ONNX smoke-test models
+        run: |
+          set -euo pipefail
+          mkdir -p build/MeanVC2Models
+          base="https://huggingface.co/kiarina/MeanVC2-ONNX/resolve/2db97430c6e315a819daa30e255e14615205a3d1"
+          curl -L --fail --retry 3 "$base/fbank.onnx?download=true" -o build/MeanVC2Models/fbank.onnx
+          curl -L --fail --retry 3 "$base/asr.int8.onnx?download=true" -o build/MeanVC2Models/asr.int8.onnx
+          curl -L --fail --retry 3 "$base/gtm.onnx?download=true" -o build/MeanVC2Models/gtm.onnx
+          curl -L --fail --retry 3 "$base/dit.int8.onnx?download=true" -o build/MeanVC2Models/dit.int8.onnx
+          curl -L --fail --retry 3 "$base/vocos.int8.onnx?download=true" -o build/MeanVC2Models/vocos.int8.onnx
+          cd build/MeanVC2Models
+          echo "ecbe193170abe98a8c0ba9299e8fe21b418145aca924e351c667b9257c3e28c8  fbank.onnx" | shasum -a 256 -c -
+          echo "553869e3159af4497582072e66f09c16032a3b98ac2bad5c195b7443627616be  asr.int8.onnx" | shasum -a 256 -c -
+          echo "f03ff1e9da3c373445f7518fa36fc99980fe4326447235fa89ea1923f57ee224  gtm.onnx" | shasum -a 256 -c -
+          echo "52ac682ed1790b196333d1dbf99fa2806b6c52076c85e438c9dede968572675a  dit.int8.onnx" | shasum -a 256 -c -
+          echo "a0dbd4c83708f6e787ceebf1c1b0833398dbdea6af770887d27b19119bba2e16  vocos.int8.onnx" | shasum -a 256 -c -
       - name: Run ONNX streaming inference smoke test in iPhone Simulator
         run: |
           set -euo pipefail
@@ -43,8 +59,11 @@ jobs:
           APP_PATH="build/DerivedData/Build/Products/Debug-iphonesimulator/MeanVC2.app"
           test -d "$APP_PATH"
           xcrun simctl install "$UDID" "$APP_PATH"
-          xcrun simctl launch "$UDID" jp.yanyantukebo.meanvc2
           DATA_PATH="$(xcrun simctl get_app_container "$UDID" jp.yanyantukebo.meanvc2 data)"
+          MODEL_PATH="$DATA_PATH/Library/Application Support/MeanVC2Models"
+          mkdir -p "$MODEL_PATH"
+          cp build/MeanVC2Models/*.onnx "$MODEL_PATH/"
+          xcrun simctl launch "$UDID" jp.yanyantukebo.meanvc2
           for attempt in $(seq 1 180); do
             if [ -f "$DATA_PATH/Documents/onnx-pipeline-smoke-test.ok" ] && [ "$(cat "$DATA_PATH/Documents/onnx-pipeline-smoke-test.ok")" = "PASS" ]; then
               echo "ONNX streaming inference smoke test passed"
