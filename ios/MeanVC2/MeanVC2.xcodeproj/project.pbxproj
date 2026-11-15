@@ -9,9 +9,6 @@
 		A20000000000000000000001 /* onnxruntime in Frameworks */ = {isa = PBXBuildFile; productRef = F20000000000000000000002 /* onnxruntime */; };
 		A10000000000000000000001 /* MeanVC2App.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* MeanVC2App.swift */; };
 		A10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* ContentView.swift */; };
-		A10000000000000000000003 /* VocosCoreMLDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* VocosCoreMLDecoder.swift */; };
-		A10000000000000000000004 /* MeanVC2VocosSpectrogram.mlpackage in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* MeanVC2VocosSpectrogram.mlpackage */; };
-		A10000000000000000000005 /* FastU2CoreMLRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* FastU2CoreMLRunner.swift */; };
 		A10000000000000000000006 /* ONNXRuntimeEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000007 /* ONNXRuntimeEnvironment.swift */; };
 		A10000000000000000000007 /* MeanVC2ModelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* MeanVC2ModelStore.swift */; };
 		A10000000000000000000008 /* MeanVC2ONNXStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000009 /* MeanVC2ONNXStream.swift */; };
@@ -23,9 +20,6 @@
 		B10000000000000000000001 /* MeanVC2App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeanVC2App.swift; sourceTree = "<group>"; };
 		B10000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B10000000000000000000003 /* MeanVC2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MeanVC2.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B10000000000000000000004 /* VocosCoreMLDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocosCoreMLDecoder.swift; sourceTree = "<group>"; };
-		B10000000000000000000005 /* MeanVC2VocosSpectrogram.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper.mlpackage; path = MeanVC2VocosSpectrogram.mlpackage; sourceTree = "<group>"; };
-		B10000000000000000000006 /* FastU2CoreMLRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastU2CoreMLRunner.swift; sourceTree = "<group>"; };
 		B10000000000000000000007 /* ONNXRuntimeEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ONNXRuntimeEnvironment.swift; sourceTree = "<group>"; };
 		B10000000000000000000008 /* MeanVC2ModelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeanVC2ModelStore.swift; sourceTree = "<group>"; };
 		B10000000000000000000009 /* MeanVC2ONNXStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeanVC2ONNXStream.swift; sourceTree = "<group>"; };
@@ -40,13 +34,7 @@
 /* Begin PBXGroup section */
 		D10000000000000000000001 = {
 			isa = PBXGroup;
-			children = (B10000000000000000000001 /* MeanVC2App.swift */, B10000000000000000000002 /* ContentView.swift */, B10000000000000000000004 /* VocosCoreMLDecoder.swift */, B10000000000000000000006 /* FastU2CoreMLRunner.swift */, B10000000000000000000007 /* ONNXRuntimeEnvironment.swift */, B10000000000000000000008 /* MeanVC2ModelStore.swift */, B10000000000000000000009 /* MeanVC2ONNXStream.swift */, B10000000000000000000010 /* MeanVC2SpeakerEncoder.swift */, B10000000000000000000011 /* MeanVC2AudioFile.swift */, D10000000000000000000004 /* Models */, D10000000000000000000003 /* Products */,);
-			sourceTree = "<group>";
-		};
-		D10000000000000000000004 /* Models */ = {
-			isa = PBXGroup;
-			children = (B10000000000000000000005 /* MeanVC2VocosSpectrogram.mlpackage */,);
-			path = Models;
+			children = (B10000000000000000000001 /* MeanVC2App.swift */, B10000000000000000000002 /* ContentView.swift */, B10000000000000000000007 /* ONNXRuntimeEnvironment.swift */, B10000000000000000000008 /* MeanVC2ModelStore.swift */, B10000000000000000000009 /* MeanVC2ONNXStream.swift */, B10000000000000000000010 /* MeanVC2SpeakerEncoder.swift */, B10000000000000000000011 /* MeanVC2AudioFile.swift */,  D10000000000000000000003 /* Products */,);
 			sourceTree = "<group>";
 		};
 		D10000000000000000000003 /* Products */ = {
@@ -91,11 +79,11 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		C10000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000004 /* MeanVC2VocosSpectrogram.mlpackage in Resources */,); runOnlyForDeploymentPostprocessing = 0; };
+		C10000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		C10000000000000000000002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001 /* MeanVC2App.swift in Sources */, A10000000000000000000002 /* ContentView.swift in Sources */, A10000000000000000000003 /* VocosCoreMLDecoder.swift in Sources */, A10000000000000000000005 /* FastU2CoreMLRunner.swift in Sources */, A10000000000000000000006 /* ONNXRuntimeEnvironment.swift in Sources */, A10000000000000000000007 /* MeanVC2ModelStore.swift in Sources */, A10000000000000000000008 /* MeanVC2ONNXStream.swift in Sources */, A10000000000000000000009 /* MeanVC2SpeakerEncoder.swift in Sources */, A10000000000000000000010 /* MeanVC2AudioFile.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0; };
+		C10000000000000000000002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001 /* MeanVC2App.swift in Sources */, A10000000000000000000002 /* ContentView.swift in Sources */, A10000000000000000000006 /* ONNXRuntimeEnvironment.swift in Sources */, A10000000000000000000007 /* MeanVC2ModelStore.swift in Sources */, A10000000000000000000008 /* MeanVC2ONNXStream.swift in Sources */, A10000000000000000000009 /* MeanVC2SpeakerEncoder.swift in Sources */, A10000000000000000000010 /* MeanVC2AudioFile.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
