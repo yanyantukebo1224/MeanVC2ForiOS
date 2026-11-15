@@ -195,6 +195,15 @@ struct ContentView: View {
             guard !smokeOutput.isEmpty, smokeOutput.allSatisfy(\.isFinite) else {
                 throw MeanVC2ONNXError.invalidTensor("ONNX streaming smoke test returned no valid audio")
             }
+            let savedEmbeddingURL = directory.appendingPathComponent("target-speaker.f32")
+            if let savedData = try? Data(contentsOf: savedEmbeddingURL),
+               savedData.count == 256 * MemoryLayout<Float>.size {
+                let savedEmbedding = savedData.withUnsafeBytes { raw in
+                    Array(raw.bindMemory(to: Float.self))
+                }
+                try runner.setTargetEmbedding(savedEmbedding)
+                targetReady = true
+            }
             stream = runner
             engineReady = true
             modelStatus = "変換モデル準備完了"
@@ -255,6 +264,13 @@ struct ContentView: View {
                 return try encoder.embedding(for: waveform)
             }.value
             try stream?.setTargetEmbedding(embedding)
+            let embeddingData = embedding.withUnsafeBufferPointer { buffer in
+                Data(bytes: buffer.baseAddress!, count: buffer.count * MemoryLayout<Float>.size)
+            }
+            try embeddingData.write(
+                to: directory.appendingPathComponent("target-speaker.f32"),
+                options: .atomic
+            )
             targetReady = true
             modelStatus = "変換先の声を登録しました"
         } catch {
@@ -338,7 +354,7 @@ struct ContentView: View {
                         .background(accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 13))
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(referenceURL?.lastPathComponent ?? "変換先の声を選択")
+                        Text(referenceURL?.lastPathComponent ?? (targetReady ? "保存済みの声" : "変換先の声を選択"))
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.white)
                             .lineLimit(1)
