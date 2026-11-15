@@ -10,7 +10,7 @@ enum MeanVC2ONNXError: Error {
 /// Native Swift host loop for the published 120ms_40ms MeanVC2 ONNX graphs.
 /// Input is mono Float32 audio at 16 kHz. Each call may contain one 160 ms
 /// chunk; output is the audio produced so far and can initially be empty.
-final class MeanVC2ONNXStream {
+final class MeanVC2ONNXStream: @unchecked Sendable {
     private static let sampleRate = 16_000
     private static let inputChunkSamples = 2_560
     private static let fbankFrameSamples = 400
