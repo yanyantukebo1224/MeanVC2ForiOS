@@ -119,11 +119,12 @@ final class VocosCoreMLDecoder {
     ) throws {
         let configuration = MLModelConfiguration()
         configuration.computeUnits = .all
-        self.model = try MLModel(contentsOf: modelURL, configuration: configuration)
-        guard let input = model.modelDescription.inputDescriptionsByName.keys.first,
-              let output = model.modelDescription.outputDescriptionsByName.keys.first else {
+        let loadedModel = try MLModel(contentsOf: modelURL, configuration: configuration)
+        guard let input = loadedModel.modelDescription.inputDescriptionsByName.keys.first,
+              let output = loadedModel.modelDescription.outputDescriptionsByName.keys.first else {
             throw VocosDecoderError.invalidModelOutput
         }
+        self.model = loadedModel
         self.inputName = input
         self.outputName = output
         self.fftSize = fftSize
@@ -137,7 +138,7 @@ final class VocosCoreMLDecoder {
         }
 
         let input = try MLMultiArray(
-            shape: [1, 80, frameCount] as [NSNumber],
+            shape: [NSNumber(value: 1), NSNumber(value: 80), NSNumber(value: frameCount)],
             dataType: .float32
         )
         for index in mel.indices {
