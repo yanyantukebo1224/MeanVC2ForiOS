@@ -139,12 +139,20 @@ def replace_attention_cache_splits(script_module):
             raise RuntimeError("Unexpected Fast-U2++ cache split graph")
         unpack = uses[0].user
         cache = node.inputsAt(0)
-        dim = graph.insertConstant(3)
-        start0 = graph.insertConstant(0)
-        endHalf = graph.insertConstant(64)
-        startHalf = graph.insertConstant(64)
-        endFull = graph.insertConstant(128)
-        step = graph.insertConstant(1)
+        def local_int(value):
+            constant = graph.create("prim::Constant", [], 1)
+            constant.i_("value", value)
+            constant.output().setType(torch._C.IntType.get())
+            constant.insertBefore(node)
+            return constant.output()
+
+        # Constants must live in the same nested If block as the slice nodes.
+        dim = local_int(3)
+        start0 = local_int(0)
+        endHalf = local_int(64)
+        startHalf = local_int(64)
+        endFull = local_int(128)
+        step = local_int(1)
 
         first = graph.create("aten::slice", [cache, dim, start0, endHalf, step], 1)
         second = graph.create("aten::slice", [cache, dim, startHalf, endFull, step], 1)
