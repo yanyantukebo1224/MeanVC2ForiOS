@@ -14,10 +14,10 @@ final class MeanVC2SpeakerEncoder {
 
     /// Accepts mono Float32 samples resampled to 16 kHz.
     func embedding(for waveform: [Float]) throws -> [Float] {
-        guard waveform.count >= 16_000,
+        guard waveform.count >= 3 * 16_000,
               waveform.allSatisfy(\.isFinite) else {
             throw MeanVC2ONNXError.invalidTensor(
-                "Reference audio must contain at least one second of finite 16 kHz mono audio"
+                "Reference audio must contain at least three seconds of finite 16 kHz mono audio"
             )
         }
         let input = try ORTTensor.float(waveform, shape: [1, waveform.count])
