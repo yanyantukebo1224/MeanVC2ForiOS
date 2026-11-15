@@ -112,10 +112,23 @@ jobs:
           retention-days: 14
       - name: Export ASR and compare outputs
         run: python ios/tools/export_coreml.py --skip-vocoder
+      - name: Upload traced ASR graph diagnostics
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: meanvc2-asr-traced-graph
+          path: |
+            ios/Diagnostics/MeanVC2ASR_traced_graph.txt
+            ios/Diagnostics/MeanVC2ASR_int_nodes.txt
+          if-no-files-found: ignore
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: meanvc2-asr-coreml
-          path: ios/Models/MeanVC2ASR.mlpackage
+          path: |
+            ios/Models/MeanVC2ASR.mlpackage
+            ios/Models/MeanVC2ASRPositionalEncoding.f32
+            ios/Models/MeanVC2ASRPositionalEncoding.json
           if-no-files-found: ignore
           retention-days: 14
