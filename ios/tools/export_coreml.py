@@ -181,6 +181,9 @@ def export_coreml(module, inputs, name, ct):
         if name == "MeanVC2ASR":
             # The fixed 40ms_40ms profile always enters with non-empty caches.
             # Resolve shape-dependent branches before Core ML lowering.
+            # Inline scripted encoder layers first so shape predicates inside
+            # their attention modules become visible to the propagation pass.
+            torch._C._jit_pass_inline(traced.graph)
             torch._C._jit_pass_complete_shape_analysis(
                 traced.graph, list(inputs), False
             )
