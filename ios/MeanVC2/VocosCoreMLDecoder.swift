@@ -27,18 +27,22 @@ enum VocosISTFT {
         let frequencyBins = fftSize / 2 + 1
         guard frameCount > 0,
               fftSize > 0,
-              fftSize.nonzeroBitCount == 1,
               hopLength > 0,
               hopLength <= fftSize,
               realImag.count == frequencyBins * frameCount * 2 else {
             throw VocosDecoderError.invalidSpectrogramShape
         }
 
-        let log2FFT = vDSP_Length(fftSize.trailingZeroBitCount)
-        guard let setup = vDSP_create_fftsetup(log2FFT, FFTRadix(kFFTRadix2)) else {
+        // Vocos uses a 640-point transform (5 * 2^7), not a power-of-two FFT.
+        // vDSP_DFT supports this length and keeps the inverse transform exact.
+        guard let setup = vDSP_DFT_zop_CreateSetup(
+            nil,
+            vDSP_Length(fftSize),
+            vDSP_DFT_Direction.INVERSE
+        ) else {
             throw VocosDecoderError.unsupportedFFTSize
         }
-        defer { vDSP_destroy_fftsetup(setup) }
+        defer { vDSP_DFT_DestroySetup(setup) }
 
         // torch.hann_window(win_length) uses the periodic Hann definition.
         let window = (0..<fftSize).map { index -> Float in
@@ -68,32 +72,40 @@ enum VocosISTFT {
                 }
             }
 
-            real.withUnsafeMutableBufferPointer { realBuffer in
-                imag.withUnsafeMutableBufferPointer { imagBuffer in
-                    guard let realBase = realBuffer.baseAddress,
-                          let imagBase = imagBuffer.baseAddress else { return }
-                    var split = DSPSplitComplex(realp: realBase, imagp: imagBase)
-                    vDSP_fft_zip(
-                        setup,
-                        &split,
-                        1,
-                        log2FFT,
-                        FFTDirection(FFT_INVERSE)
-                    )
-                    var scale = 1.0 / Float(fftSize)
-                    vDSP_vsmul(
-                        realBase, 1,
-                        &scale,
-                        realBase, 1,
-                        vDSP_Length(fftSize)
-                    )
+            var timeReal = [Float](repeating: 0, count: fftSize)
+            var timeImag = [Float](repeating: 0, count: fftSize)
+            real.withUnsafeBufferPointer { realBuffer in
+                imag.withUnsafeBufferPointer { imagBuffer in
+                    timeReal.withUnsafeMutableBufferPointer { realOutput in
+                        timeImag.withUnsafeMutableBufferPointer { imagOutput in
+                            guard let inputReal = realBuffer.baseAddress,
+                                  let inputImag = imagBuffer.baseAddress,
+                                  let outputReal = realOutput.baseAddress,
+                                  let outputImag = imagOutput.baseAddress else { return }
+                            vDSP_DFT_Execute(
+                                setup,
+                                inputReal,
+                                inputImag,
+                                outputReal,
+                                outputImag
+                            )
+                            // vDSP's inverse DFT is unnormalized; PyTorch irfft divides by N.
+                            var scale = 1.0 / Float(fftSize)
+                            vDSP_vsmul(
+                                outputReal, 1,
+                                &scale,
+                                outputReal, 1,
+                                vDSP_Length(fftSize)
+                            )
+                        }
+                    }
                 }
             }
 
             let destinationStart = frame * hopLength
             for sample in 0..<fftSize {
                 let weight = window[sample]
-                output[destinationStart + sample] += real[sample] * weight
+                output[destinationStart + sample] += timeReal[sample] * weight
                 envelope[destinationStart + sample] += weight * weight
             }
         }
