@@ -1,39 +1,54 @@
 # MeanVC2 for iOS
 
-Native SwiftUI iOS app shell and the first validated Core ML component export.
+Native SwiftUI app with a Swift streaming host loop and ONNX Runtime for the
+published MeanVC2 120ms_40ms graph set.
 
-## Verified status
+## Active implementation
 
-- SwiftUI dark UI and reference-audio picker: implemented
-- Xcode iOS Simulator build: successful in GitHub Actions
-- Vocos spectral network: exported as a Core ML ML Program
-- Vocos spectral output vs. original PyTorch iSTFT waveform: numerical parity passed in GitHub Actions
-- Native Accelerate iSTFT + Core ML model loader: added to the iOS target; compile status is checked by the iOS build workflow
-- Vocos checkpoint parameters: FFT 640, hop 160, centered iSTFT
-- Fast-U2++ ASR: Core ML conversion still blocked by dynamic scalar-to-integer operations in its streaming positional-encoding path
-- WavLM + ECAPA speaker encoder: not ported
-- DiT/CFM decoder and streaming KV cache: not ported
-- AVAudioEngine microphone-to-output pipeline: not integrated
-- End-to-end voice conversion on device: not verified
-- IPA and physical-device test: not produced / not tested
+- SwiftUI reference-audio picker and model status UI
+- ONNX Runtime through Microsoft's Swift Package Manager distribution
+- SHA-256-verified model downloader pinned to a fixed Hugging Face revision
+- Native Swift streaming host loop: fbank, Fast-U2++ ASR, BN interpolation,
+  DiT flow-matching steps with per-layer KV caches, and Vocos waveform output
+- Optional WavLM-Large + ECAPA speaker encoder for reference-voice registration
+- AVFoundation audio-file decoding, mono downmix and 16 kHz resampling
+- iPhone Simulator smoke test that loads the graph set and runs the streaming
+  inference loop on synthetic audio
+
+## Model profile
+
+The current ONNX graph set is the 120ms_40ms profile: 160 ms input chunks,
+120 ms output chunks and 40 ms look-ahead. The first converted audio is expected
+after the initial streaming context has accumulated. This is not the earlier
+40ms_40ms Core ML prototype.
+
+The conversion graphs are downloaded on first launch (roughly 74 MB total,
+including the GTM graph). The optional speaker encoder is downloaded only when
+a reference voice is registered (roughly 387 MB). After these assets are present,
+model inference is offline.
 
 ## Build
 
-Open `MeanVC2/MeanVC2.xcodeproj` in Xcode.
+Open `MeanVC2/MeanVC2.xcodeproj` in Xcode. Xcode resolves the official
+`onnxruntime-swift-package-manager` package automatically.
 
-## Model conversion
+## Verification status
 
-Run the **iOS Core ML model export** workflow from GitHub Actions. It downloads the official checkpoints and creates separate artifacts for Vocos and Fast-U2++ so one conversion failure does not hide the other.
+- Earlier Vocos Core ML spectral export and native iSTFT parity: passed; retained
+  as diagnostics, no longer the active runtime path
+- ONNX model checksums: pinned and checked before model files are accepted
+- Native Swift ONNX streaming implementation: added; awaiting successful
+  Xcode/Simulator compilation and numerical smoke-test confirmation
+- Target speaker extraction: implemented; awaiting device-side verification
+- Live microphone capture, resampling and playback via AVAudioEngine: not yet
+  integrated
+- Real-time end-to-end conversion from microphone to speaker: not yet verified
+- Physical iPhone performance, thermal behavior, memory use and audio quality:
+  not yet verified
+- Signed IPA: not yet produced
 
-The Vocos artifact contains the learned backbone and spectral projection. The iOS app performs the final centered inverse STFT with Accelerate. The exported model is not yet connected to the app's microphone pipeline.
+## Model provenance and licenses
 
-The Fast-U2++ exporter deliberately does not freeze the stream offset to a constant: a four-chunk parity test showed that doing so changes the output and is not a valid streaming implementation.
-
-## Remaining native pipeline
-
-1. Make Fast-U2++ export accept the positional-encoding window as a tensor input while preserving the rolling attention and convolution caches.
-2. Port WavLM + ECAPA speaker embedding extraction and UTTE conditioning.
-3. Export the DiT/CFM decoder with per-layer streaming KV cache.
-4. Connect ASR, speaker conditioning, DiT, and Vocos through AVAudioEngine.
-5. Validate waveform parity, end-to-end latency, memory, thermal behavior, and audio quality on a physical iPhone.
-6. Produce a signed IPA only after the complete pipeline passes the checks above.
+See the repository root `THIRD_PARTY_NOTICES.md`. The conversion graphs are
+Apache-2.0. The optional WavLM-Large + ECAPA speaker encoder is separately
+licensed CC BY-SA 3.0. Only register voices with the speaker's permission.
