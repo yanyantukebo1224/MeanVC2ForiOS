@@ -142,7 +142,8 @@ final class VocosCoreMLDecoder {
         self.paddingMode = paddingMode
     }
 
-    /// mel is channel-major [80, frames], normalized exactly as MeanVC2 runtime expects.
+    /// mel is the MeanVC2 decoder output in [-1, 1], channel-major [80, frames].
+    /// The reference runtime maps it to [0, 1] before calling Vocos.
     func decode(mel: [Float], frameCount: Int) throws -> [Float] {
         guard frameCount > 0, mel.count == 80 * frameCount else {
             throw VocosDecoderError.invalidSpectrogramShape
@@ -153,7 +154,7 @@ final class VocosCoreMLDecoder {
             dataType: .float32
         )
         for index in mel.indices {
-            input[index] = NSNumber(value: mel[index])
+            input[index] = NSNumber(value: (mel[index] + 1.0) * 0.5)
         }
 
         let provider = try MLDictionaryFeatureProvider(dictionary: [
