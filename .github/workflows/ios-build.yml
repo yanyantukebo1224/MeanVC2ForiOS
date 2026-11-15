@@ -26,8 +26,17 @@ jobs:
           run-id: 43672245973
           github-token: ${{ github.token }}
           path: ios/MeanVC2/Models
-      - name: Verify Vocos package
-        run: test -d ios/MeanVC2/Models/MeanVC2VocosSpectrogram.mlpackage
+      - name: Normalize downloaded Core ML package layout
+        run: |
+          set -euo pipefail
+          package="ios/MeanVC2/Models/MeanVC2VocosSpectrogram.mlpackage"
+          if [ ! -d "$package" ] && [ -d ios/MeanVC2/Models/Data ] && [ -f ios/MeanVC2/Models/Manifest.json ]; then
+            mkdir -p "$package"
+            mv ios/MeanVC2/Models/Data "$package/"
+            mv ios/MeanVC2/Models/Manifest.json "$package/"
+          fi
+          test -f "$package/Data/com.apple.CoreML/model.mlmodel"
+          test -f "$package/Manifest.json"
       - name: Build iOS Simulator app
         run: |
           xcodebuild \
