@@ -5,6 +5,9 @@ struct ContentView: View {
     @State private var referenceURL: URL?
     @State private var showingImporter = false
     @State private var showingModelInfo = false
+    @State private var vocosReady = false
+    @State private var vocosError: String?
+    @State private var vocosDecoder: VocosCoreMLDecoder?
 
     private let accent = Color(red: 0.63, green: 0.48, blue: 1.0)
 
@@ -46,7 +49,7 @@ struct ContentView: View {
                         Text("変換エンジンの状態")
                             .font(.system(size: 15, weight: .semibold))
                         Spacer()
-                        Text("準備中")
+                        Text(vocosReady ? "Vocos OK" : "準備中")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(accent)
                         Image(systemName: "chevron.right")
@@ -81,7 +84,30 @@ struct ContentView: View {
         .alert("変換エンジン", isPresented: $showingModelInfo) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("VocosのCore ML変換とiOS側iSTFTは実装済みです。Fast-U2++ ASR、話者特徴抽出、DiT、リアルタイム音声接続は開発中です。")
+            Text(vocosError ?? "VocosのCore ML推論とiOS側iSTFTを確認しました。Fast-U2++ ASR、話者特徴抽出、DiT、リアルタイム音声接続は開発中です。")
+        }
+        .task {
+            guard let modelURL = Bundle.main.url(
+                forResource: "MeanVC2VocosSpectrogram",
+                withExtension: "mlmodelc"
+            ) else {
+                vocosError = "Vocosモデルがアプリ内に見つかりません。"
+                return
+            }
+            do {
+                let decoder = try VocosCoreMLDecoder(modelURL: modelURL)
+                let sample = try decoder.decode(
+                    mel: [Float](repeating: 0, count: 80 * 16),
+                    frameCount: 16
+                )
+                guard sample.count == 2400, sample.allSatisfy(\.isFinite) else {
+                    throw VocosDecoderError.invalidModelOutput
+                }
+                vocosDecoder = decoder
+                vocosReady = true
+            } catch {
+                vocosError = "Vocos推論テストに失敗しました: \(error.localizedDescription)"
+            }
         }
     }
 
