@@ -30,6 +30,15 @@ for name, module in model.named_modules():
             except Exception as error:
                 lines.append(f"  {method_name} schema error: {error}")
 
+lines.append("=== forward_encoder_chunk graph ===")
+lines.append(str(model.m._c._get_method("forward_encoder_chunk").graph))
+lines.append("=== encoder.forward_chunk graph ===")
+lines.append(str(model.m.encoder._c._get_method("forward_chunk").graph))
+lines.append(f"encoder_layers={len(model.m.encoder.encoders)}")
+try:
+    lines.append(f"left_encoder_layers={len(model.m.encoder.l_encoders)}")
+except Exception as error:
+    lines.append(f"left_encoder_layers unavailable: {error}")
 lines.append("=== forward_encoder_chunk_j3 graph ===")
 lines.append(str(model.m._c._get_method("forward_encoder_chunk_j3").graph))
 lines.append("=== encoder.forward_chunk_j3 graph ===")
