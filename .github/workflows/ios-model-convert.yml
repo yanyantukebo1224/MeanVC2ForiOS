@@ -80,11 +80,21 @@ jobs:
           shutil.copy2(src, target)
           print(f"fastu2pp_80ms.pt: {target.stat().st_size} bytes")
           PY
+      - name: Inspect Fast-U2++ TorchScript graph
+        run: python ios/tools/inspect_asr.py
+      - name: Upload Fast-U2++ graph diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: meanvc2-fastu2pp-graph-diagnostics
+          path: ios/Diagnostics/fastu2pp_torchscript_graph.txt
+          if-no-files-found: error
+          retention-days: 14
       - name: Export ASR and compare outputs
         run: python ios/tools/export_coreml.py --skip-vocoder
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: meanvc2-asr-coreml
           path: ios/Models/MeanVC2ASR.mlpackage
-          if-no-files-found: error
+          if-no-files-found: ignore
           retention-days: 14
