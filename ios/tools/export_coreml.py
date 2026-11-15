@@ -63,7 +63,7 @@ def export_coreml(module, inputs, name, ct):
     mlmodel.save(str(destination))
     # Reload and run a numerical parity check on CPU before accepting the artifact.
     loaded = ct.models.MLModel(str(destination), compute_units=ct.ComputeUnit.CPU_ONLY)
-    input_names = [item.name for item in mlmodel.input_description]
+    input_names = list(mlmodel.input_description)
     prediction = loaded.predict({n: x.detach().cpu().numpy() for n, x in zip(input_names, inputs)})
     output_names = list(mlmodel.output_description)
     expected_values = expected if isinstance(expected, (tuple, list)) else (expected,)
