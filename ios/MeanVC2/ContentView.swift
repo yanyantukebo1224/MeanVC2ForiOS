@@ -195,6 +195,7 @@ struct ContentView: View {
             guard !smokeOutput.isEmpty, smokeOutput.allSatisfy(\.isFinite) else {
                 throw MeanVC2ONNXError.invalidTensor("ONNX streaming smoke test returned no valid audio")
             }
+            runner.noiseProvider = nil
             let savedEmbeddingURL = directory.appendingPathComponent("target-speaker.f32")
             if let savedData = try? Data(contentsOf: savedEmbeddingURL),
                savedData.count == 256 * MemoryLayout<Float>.size {
