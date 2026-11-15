@@ -43,7 +43,8 @@ final class MeanVC2ONNXStream: @unchecked Sendable {
     private var vocoderCache: [Float]?
     private var lastWaveform: [Float]?
     private var bnBuffer: [Float] = []
-    private var randomState: UInt64 = 0x4D65616E564332
+    // Production inference gets fresh Gaussian noise; CI can inject a fixed noiseProvider.
+    private var randomState: UInt64 = UInt64.random(in: UInt64.min...UInt64.max)
     var noiseProvider: ((Int) -> [Float])?
 
     init(modelDirectory: URL, threads: Int = 2, odeSteps: Int = 3) throws {
@@ -215,7 +216,7 @@ final class MeanVC2ONNXStream: @unchecked Sendable {
             bottleneck = encoderOutputCache + bottleneck
         }
         let rowCount = bottleneck.count / 256
-        encoderOutputCache = Array(bottleneck[((rowCount - 1) * 256)..< (rowCount * 256)])
+        encoderOutputCache = Array(bottleneck[((rowCount - 1) * 256)..<(rowCount * 256)])
         guard rowCount >= 2 else { return nil }
         return Self.interpolateAlignCorners(
             bottleneck, rows: rowCount, outputRows: 17, columns: 256
@@ -369,13 +370,11 @@ final class MeanVC2ONNXStream: @unchecked Sendable {
         guard let session = sessions[name] else {
             throw MeanVC2ONNXError.modelMissing(name)
         }
-        guard let result = try session.run(
+        let result = try session.run(
             withInputs: inputs,
             outputNames: outputs,
             runOptions: nil
-        ) else {
-            throw MeanVC2ONNXError.invalidTensor("ONNX Runtime returned no outputs for \(name)")
-        }
+        )
         return result
     }
 
@@ -455,9 +454,7 @@ enum ORTTensor {
     }
 
     static func readFloat(_ value: ORTValue) throws -> [Float] {
-        guard let data = try value.tensorData() else {
-            throw MeanVC2ONNXError.invalidTensor("ONNX tensor data is unavailable")
-        }
+        let data = try value.tensorData()
         let count = data.length / MemoryLayout<Float>.size
         guard count > 0 else { return [] }
         let pointer = data.bytes.assumingMemoryBound(to: Float.self)
