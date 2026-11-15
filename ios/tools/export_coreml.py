@@ -36,10 +36,9 @@ class ASRChunkWithPos(torch.nn.Module):
         embed = self.encoder.embed
         xs = xs.unsqueeze(1)
         xs = embed.conv(xs)
-        batch, channels, time, freq = xs.size()
-        xs = embed.out(
-            xs.transpose(1, 2).contiguous().view(batch, time, channels * freq)
-        )
+        # Flatten the frequency/channel axes directly; constructing a view
+        # shape from tensor sizes emits aten::Int, which Core ML cannot lower.
+        xs = embed.out(xs.transpose(1, 2).contiguous().flatten(2))
         xs = embed.pos_enc.dropout(xs * embed.pos_enc.xscale)
         pos_emb = embed.pos_enc.dropout(pos_emb)
 
@@ -47,8 +46,10 @@ class ASRChunkWithPos(torch.nn.Module):
         cache_t1 = att_cache.size(2)
         chunk_size = xs.size(1)
         attention_key_size = cache_t1 + chunk_size
-        # The 40ms_40ms runtime profile uses a four-frame rolling attention cache.
-        next_cache_start = max(attention_key_size - 4, 0)
+        # For this fixed 40ms_40ms profile: cache_t1=4, chunk_size=2,
+        # required_cache_size=4, so the retained cache starts at frame 2.
+        # Keep this shape-derived value static to avoid tensor-to-int casts.
+        next_cache_start = 2
 
         empty_mask = torch.zeros((0, 0, 0), dtype=torch.bool, device=xs.device)
         new_att_caches = []
