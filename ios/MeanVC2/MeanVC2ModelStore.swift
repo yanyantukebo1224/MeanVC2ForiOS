@@ -95,7 +95,7 @@ actor MeanVC2ModelStore {
         try FileManager.default.moveItem(at: staging, to: destination)
     }
 
-    private func isValid(_ url: URL, asset: Asset) async throws -> Bool {
+    private func isValid(_ url: URL, asset: Asset) throws -> Bool {
         let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
         guard (attributes[.size] as? NSNumber)?.intValue == asset.bytes else {
             return false
