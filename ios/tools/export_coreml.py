@@ -117,47 +117,50 @@ def replace_attention_cache_splits(script_module):
     int/float split-size dtypes, while equivalent static slices are supported.
     """
     graph = script_module.graph
-    patched = 0
+    split_nodes = []
 
-    def visit(block):
-        nonlocal patched
+    # Collect first. Mutating a nested If block while traversing its parent
+    # invalidates the parent node wrapper in PyTorch's JIT Python bindings.
+    def collect(block):
         for node in list(block.nodes()):
-            for child in node.blocks():
-                visit(child)
-            if node.kind() != "aten::split":
-                continue
-            uses = list(node.output().uses())
-            if len(uses) != 1 or uses[0].user.kind() != "prim::ListUnpack":
-                raise RuntimeError("Unexpected Fast-U2++ cache split graph")
-            unpack = uses[0].user
-            cache = node.inputsAt(0)
-            dim = graph.insertConstant(3)
-            start0 = graph.insertConstant(0)
-            endHalf = graph.insertConstant(64)
-            startHalf = graph.insertConstant(64)
-            endFull = graph.insertConstant(128)
-            step = graph.insertConstant(1)
+            if node.kind() == "aten::split":
+                split_nodes.append(node)
+            child_blocks = list(node.blocks())
+            for child in child_blocks:
+                collect(child)
 
-            first = graph.create("aten::slice", [cache, dim, start0, endHalf, step], 1)
-            second = graph.create("aten::slice", [cache, dim, startHalf, endFull, step], 1)
-            first.output().setType(unpack.outputsAt(0).type())
-            second.output().setType(unpack.outputsAt(1).type())
-            first.insertBefore(node)
-            second.insertBefore(node)
-            unpack.outputsAt(0).replaceAllUsesWith(first.output())
-            unpack.outputsAt(1).replaceAllUsesWith(second.output())
-            unpack.destroy()
-            node.destroy()
-            patched += 1
+    collect(graph.block())
+    if len(split_nodes) != 6:
+        raise RuntimeError(f"Expected 6 packed attention-cache splits, found {len(split_nodes)}")
 
-    visit(graph.block())
-    if patched != 6:
-        raise RuntimeError(f"Expected 6 packed attention-cache splits, patched {patched}")
+    for node in split_nodes:
+        uses = list(node.output().uses())
+        if len(uses) != 1 or uses[0].user.kind() != "prim::ListUnpack":
+            raise RuntimeError("Unexpected Fast-U2++ cache split graph")
+        unpack = uses[0].user
+        cache = node.inputsAt(0)
+        dim = graph.insertConstant(3)
+        start0 = graph.insertConstant(0)
+        endHalf = graph.insertConstant(64)
+        startHalf = graph.insertConstant(64)
+        endFull = graph.insertConstant(128)
+        step = graph.insertConstant(1)
+
+        first = graph.create("aten::slice", [cache, dim, start0, endHalf, step], 1)
+        second = graph.create("aten::slice", [cache, dim, startHalf, endFull, step], 1)
+        first.output().setType(unpack.outputsAt(0).type())
+        second.output().setType(unpack.outputsAt(1).type())
+        first.insertBefore(node)
+        second.insertBefore(node)
+        unpack.outputsAt(0).replaceAllUsesWith(first.output())
+        unpack.outputsAt(1).replaceAllUsesWith(second.output())
+        unpack.destroy()
+        node.destroy()
+
     torch._C._jit_pass_dce(graph)
     torch._C._jit_pass_lint(graph)
-    print(f"Patched {patched} packed attention-cache split ops into static slices")
+    print(f"Patched {len(split_nodes)} packed attention-cache split ops into static slices")
     return script_module
-
 
 def export_coreml(module, inputs, name, ct):
     module.eval()
