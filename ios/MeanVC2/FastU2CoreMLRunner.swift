@@ -113,7 +113,7 @@ final class FastU2CoreMLRunner {
 
     private func makeArray(shape: [Int], values: [Float]) throws -> MLMultiArray {
         let array = try MLMultiArray(
-            shape: shape.map(NSNumber.init(value:)),
+            shape: shape.map { NSNumber(value: $0) },
             dataType: .float32
         )
         guard array.count == values.count else { throw FastU2CoreMLError.invalidInput }
