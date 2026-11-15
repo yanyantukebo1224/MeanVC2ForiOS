@@ -179,16 +179,18 @@ struct ContentView: View {
             let directory = try modelsDirectory()
             let store = MeanVC2ModelStore(root: directory)
             _ = try await store.ensureConversionModels()
-            let runner = try MeanVC2ONNXStream(modelDirectory: directory)
-            runner.noiseProvider = { frameCount in [Float](repeating: 0, count: frameCount * 80) }
-            try runner.setTargetEmbedding([Float](repeating: 0, count: 256))
-
-            var smokeOutput: [Float] = []
-            for _ in 0..<8 {
-                smokeOutput.append(contentsOf: try runner.process(
-                    [Float](repeating: 0, count: 2_560)
-                ))
-            }
+            let (runner, smokeOutput) = try await Task.detached(priority: .userInitiated) {
+                let runner = try MeanVC2ONNXStream(modelDirectory: directory)
+                runner.noiseProvider = { frameCount in [Float](repeating: 0, count: frameCount * 80) }
+                try runner.setTargetEmbedding([Float](repeating: 0, count: 256))
+                var output: [Float] = []
+                for _ in 0..<8 {
+                    output.append(contentsOf: try runner.process(
+                        [Float](repeating: 0, count: 2_560)
+                    ))
+                }
+                return (runner, output)
+            }.value
             guard !smokeOutput.isEmpty, smokeOutput.allSatisfy(\.isFinite) else {
                 throw MeanVC2ONNXError.invalidTensor("ONNX streaming smoke test returned no valid audio")
             }
@@ -245,10 +247,12 @@ struct ContentView: View {
                 }
             }
             modelStatus = "参照音声を解析しています"
-            let waveform = try MeanVC2AudioFile.loadMono16k(from: url)
             let speakerModel = directory.appendingPathComponent("speaker/speaker.int8.onnx")
-            let encoder = try MeanVC2SpeakerEncoder(modelURL: speakerModel)
-            let embedding = try encoder.embedding(for: waveform)
+            let embedding = try await Task.detached(priority: .userInitiated) {
+                let waveform = try MeanVC2AudioFile.loadMono16k(from: url)
+                let encoder = try MeanVC2SpeakerEncoder(modelURL: speakerModel)
+                return try encoder.embedding(for: waveform)
+            }.value
             try stream?.setTargetEmbedding(embedding)
             targetReady = true
             modelStatus = "変換先の声を登録しました"
