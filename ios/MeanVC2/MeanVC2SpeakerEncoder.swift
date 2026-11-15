@@ -21,12 +21,11 @@ final class MeanVC2SpeakerEncoder {
             )
         }
         let input = try ORTTensor.float(waveform, shape: [1, waveform.count])
-        let result = try session.run(
+        guard let result = try session.run(
             withInputs: ["wav": input],
             outputNames: ["embedding"],
             runOptions: nil
-        )
-        guard let value = result["embedding"] else {
+        ), let value = result["embedding"] else {
             throw MeanVC2ONNXError.invalidTensor("Speaker embedding output is missing")
         }
         let vector = try ORTTensor.readFloat(value)
