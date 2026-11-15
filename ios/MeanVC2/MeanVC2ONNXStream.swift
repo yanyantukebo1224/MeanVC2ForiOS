@@ -44,6 +44,7 @@ final class MeanVC2ONNXStream {
     private var lastWaveform: [Float]?
     private var bnBuffer: [Float] = []
     private var randomState: UInt64 = 0x4D65616E564332
+    var noiseProvider: ((Int) -> [Float])?
 
     init(modelDirectory: URL, threads: Int = 2, odeSteps: Int = 3) throws {
         self.odeSteps = max(1, odeSteps)
@@ -384,6 +385,10 @@ final class MeanVC2ONNXStream {
     }
 
     private func gaussianNoise(count: Int) -> [Float] {
+        if let noiseProvider {
+            let supplied = noiseProvider(count / 80)
+            if supplied.count == count { return supplied }
+        }
         var values = [Float](repeating: 0, count: count)
         var index = 0
         while index < count {
