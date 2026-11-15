@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var modelStatus = "モデルを準備しています"
     @State private var modelError: String?
     @State private var stream: MeanVC2ONNXStream?
+    @State private var liveAudio = MeanVC2LiveAudioController()
+    @State private var isLive = false
 
     private let accent = Color(red: 0.63, green: 0.48, blue: 1.0)
     private let modelLogger = Logger(subsystem: "jp.yanyantukebo.meanvc2", category: "Engine")
@@ -45,6 +47,49 @@ struct ContentView: View {
 
                 referenceCard
 
+
+                Button {
+                    if isLive {
+                        liveAudio.stop()
+                        isLive = false
+                    } else if let stream {
+                        liveAudio.onError = { message in
+                            Task { @MainActor in
+                                modelError = "音声変換エラー: \(message)"
+                                showingModelInfo = true
+                                isLive = false
+                            }
+                        }
+                        do {
+                            try liveAudio.start(stream: stream)
+                            isLive = true
+                        } catch {
+                            modelError = "マイクを開始できませんでした: \(error.localizedDescription)"
+                            showingModelInfo = true
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: isLive ? "stop.fill" : "mic.fill")
+                            .font(.system(size: 15, weight: .bold))
+                        Text(isLive ? "変換を停止" : "マイク変換を開始")
+                            .font(.system(size: 15, weight: .bold))
+                        Spacer()
+                        Text(isLive ? "LIVE" : (targetReady ? "READY" : "VOICE REQUIRED"))
+                            .font(.system(size: 10, weight: .bold))
+                            .tracking(1)
+                    }
+                    .foregroundStyle(.white)
+                    .padding(17)
+                    .background(
+                        isLive ? Color.red.opacity(0.78) : accent.opacity(targetReady ? 0.9 : 0.25),
+                        in: RoundedRectangle(cornerRadius: 18)
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(!targetReady && !isLive)
+                .padding(.top, 12)
+
                 Button {
                     showingModelInfo = true
                 } label: {
@@ -70,7 +115,7 @@ struct ContentView: View {
 
                 Spacer(minLength: 26)
 
-                Text(targetReady ? "変換先の声を登録しました" : modelStatus)
+                Text(isLive ? "マイク変換中" : (targetReady ? "変換先の声を登録しました" : modelStatus))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.white.opacity(0.4))
                     .multilineTextAlignment(.center)
@@ -109,6 +154,10 @@ struct ContentView: View {
         }
         .task {
             await prepareConversionEngine()
+        }
+        .onDisappear {
+            liveAudio.stop()
+            isLive = false
         }
     }
 
@@ -173,6 +222,11 @@ struct ContentView: View {
             if didStartAccess { url.stopAccessingSecurityScopedResource() }
         }
 
+        if isLive {
+            liveAudio.stop()
+            isLive = false
+        }
+        targetReady = false
         modelStatus = "話者モデルを準備しています"
         do {
             let directory = try modelsDirectory()
