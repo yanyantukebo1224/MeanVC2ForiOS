@@ -30,6 +30,11 @@ for name, module in model.named_modules():
             except Exception as error:
                 lines.append(f"  {method_name} schema error: {error}")
 
+lines.append("=== forward_encoder_chunk_j3 graph ===")
+lines.append(str(model.m._c._get_method("forward_encoder_chunk_j3").graph))
+lines.append("=== encoder.forward_chunk_j3 graph ===")
+lines.append(str(model.m.encoder._c._get_method("forward_chunk_j3").graph))
+
 # Verify whether the encoder's positional offset can be reset without changing
 # the streaming representation. If this fails, a fixed-offset Core ML export
 # would be invalid and must not be used.
