@@ -66,28 +66,22 @@ class ASRChunkWithPos(torch.nn.Module):
         for index, layer in enumerate(layers):
             if elayers > 0:
                 layer_cache = att_cache[index:index + 1]
-                key_value_size = att_cache.size(-1) // 2
-                kv_cache = (
-                    layer_cache[:, :, :, :key_value_size],
-                    layer_cache[:, :, :, key_value_size:]
-                )
             else:
-                kv_cache = (att_cache, att_cache)
+                layer_cache = att_cache
 
             if cnn_cache.size(0) > 0:
                 layer_cnn_cache = cnn_cache[index]
             else:
                 layer_cnn_cache = cnn_cache
 
-            xs, _, new_kv_cache, new_cnn_cache = layer(
+            xs, _, new_att_cache, new_cnn_cache = layer(
                 xs,
                 empty_mask,
                 pos_emb,
                 empty_mask,
-                kv_cache,
+                layer_cache,
                 layer_cnn_cache
             )
-            new_att_cache = torch.cat(new_kv_cache, dim=-1)
             new_att_caches.append(new_att_cache[:, :, next_cache_start:, :])
             new_cnn_caches.append(new_cnn_cache.unsqueeze(0))
 
