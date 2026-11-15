@@ -81,10 +81,12 @@ final class MeanVC2LiveAudioController {
         player.stop()
         engine.stop()
         isRunning = false
-        pendingInput.removeAll(keepingCapacity: true)
+        processingQueue.sync {
+            pendingInput.removeAll(keepingCapacity: true)
+            outputConverter = nil
+            stream = nil
+        }
         inputConverter = nil
-        outputConverter = nil
-        stream = nil
         try? AVAudioSession.sharedInstance().setActive(
             false,
             options: .notifyOthersOnDeactivation
