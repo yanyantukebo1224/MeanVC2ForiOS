@@ -179,6 +179,14 @@ def export_coreml(module, inputs, name, ct):
         # and removes TorchScript prim::Uninitialized branches before Core ML.
         traced = torch.jit.freeze(traced.eval())
         if name == "MeanVC2ASR":
+            # The fixed 40ms_40ms profile always enters with non-empty caches.
+            # Resolve shape-dependent branches before Core ML lowering.
+            torch._C._jit_pass_complete_shape_analysis(
+                traced.graph, list(inputs), False
+            )
+            torch._C._jit_pass_constant_propagation(traced.graph)
+            torch._C._jit_pass_dce(traced.graph)
+            print("Applied fixed-profile TorchScript shape propagation")
             traced = replace_attention_cache_splits(traced)
             patched_outputs = traced(*inputs)
             expected_values_for_check = expected if isinstance(expected, (tuple, list)) else (expected,)
