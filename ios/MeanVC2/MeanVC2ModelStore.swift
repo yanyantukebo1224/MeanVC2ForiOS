@@ -59,7 +59,7 @@ actor MeanVC2ModelStore {
         for asset in assets {
             let destination = root.appendingPathComponent(asset.name)
             if FileManager.default.fileExists(atPath: destination.path),
-               try await isValid(destination, asset: asset) {
+               try isValid(destination, asset: asset) {
                 continue
             }
             progress?(asset.name)
