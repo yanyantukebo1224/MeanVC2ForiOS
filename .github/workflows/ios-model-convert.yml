@@ -1,0 +1,60 @@
+name: iOS Core ML model export
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Model profile
+        required: true
+        type: choice
+        options: [40ms_40ms]
+        default: 40ms_40ms
+  push:
+    branches: [ios-app-prototype]
+    paths:
+      - "ios/tools/**"
+      - ".github/workflows/ios-model-convert.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  export-coreml:
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ios-app-prototype
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install conversion dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "torch==2.5.1" "torchaudio==2.5.1" "coremltools==8.3.0" "huggingface_hub" "safetensors"
+      - name: Download official MeanVC2 checkpoints
+        run: |
+          python - <<'PY'
+          from huggingface_hub import hf_hub_download
+          from pathlib import Path
+          import shutil
+          files = {
+            "fastu2pp_80ms.pt": Path("preprocess/ckpts/fastu2pp_80ms.pt"),
+            "vocos.pt": Path("ckpts/vocos/vocos.pt"),
+          }
+          for name, target in files.items():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            src = hf_hub_download(repo_id="ASLP-lab/MeanVC2", filename=name)
+            shutil.copy2(src, target)
+            print(f"{name}: {target.stat().st_size} bytes")
+          PY
+      - name: Export supported components to Core ML
+        run: python ios/tools/export_coreml.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meanvc2-coreml-40ms-partial
+          path: ios/Models/
+          if-no-files-found: error
+          retention-days: 14
