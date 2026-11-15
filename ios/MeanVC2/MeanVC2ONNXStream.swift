@@ -423,7 +423,7 @@ final class MeanVC2ONNXStream {
     }
 }
 
-private enum ORTTensor {
+enum ORTTensor {
     static func float(_ values: [Float], shape: [Int]) throws -> ORTValue {
         let data = NSMutableData()
         values.withUnsafeBytes { bytes in
