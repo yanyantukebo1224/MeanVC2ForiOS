@@ -12,7 +12,14 @@ class Decode(torch.nn.Module):
     def forward(self, x):
         return self.inner.decode(x)
 traced = torch.jit.trace(Decode(model), (mel,), strict=False)
+istft = model.head.istft
 lines = [
+    "=== model metadata ===",
+    f"n_fft={istft.n_fft}",
+    f"hop_length={istft.hop_length}",
+    f"win_length={istft.win_length}",
+    f"padding={istft.padding}",
+    f"window_shape={tuple(istft.window.shape)}",
     "=== module tree ===",
     "\n".join(f"{name}: {type(module).__name__} {module}" for name, module in model.named_modules()),
     "=== parameters ===",
