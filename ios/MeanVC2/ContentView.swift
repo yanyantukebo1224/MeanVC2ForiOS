@@ -57,6 +57,7 @@ struct ContentView: View {
                             Task { @MainActor in
                                 modelError = "音声変換エラー: \(message)"
                                 showingModelInfo = true
+                                liveAudio.stop()
                                 isLive = false
                             }
                         }
