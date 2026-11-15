@@ -1,4 +1,4 @@
-name: iOS Core ML model export
+name: Legacy Core ML export diagnostics (manual)
 
 concurrency:
   group: meanvc2-model-export-${{ github.ref }}
@@ -13,11 +13,6 @@ on:
         type: choice
         options: [40ms_40ms]
         default: 40ms_40ms
-  push:
-    branches: [ios-app-prototype]
-    paths:
-      - "ios/tools/**"
-      - ".github/workflows/ios-model-convert.yml"
 
 permissions:
   contents: read
