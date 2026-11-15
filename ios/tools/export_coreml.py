@@ -109,6 +109,56 @@ class VocosSpectrogram(torch.nn.Module):
         imag = magnitude * torch.sin(phase)
         return torch.stack((real, imag), dim=-1)
 
+def replace_attention_cache_splits(script_module):
+    """Replace TorchScript split(cache, 64, dim=-1) with static slices.
+
+    The packed Fast-U2++ cache is always [1, heads, frames, 128] in the
+    40ms_40ms profile. Core ML 8.3 currently lowers this split with mismatched
+    int/float split-size dtypes, while equivalent static slices are supported.
+    """
+    graph = script_module.graph
+    patched = 0
+
+    def visit(block):
+        nonlocal patched
+        for node in list(block.nodes()):
+            for child in node.blocks():
+                visit(child)
+            if node.kind() != "aten::split":
+                continue
+            uses = list(node.output().uses())
+            if len(uses) != 1 or uses[0].user.kind() != "prim::ListUnpack":
+                raise RuntimeError("Unexpected Fast-U2++ cache split graph")
+            unpack = uses[0].user
+            cache = node.inputsAt(0)
+            dim = graph.insertConstant(3)
+            start0 = graph.insertConstant(0)
+            endHalf = graph.insertConstant(64)
+            startHalf = graph.insertConstant(64)
+            endFull = graph.insertConstant(128)
+            step = graph.insertConstant(1)
+
+            first = graph.create("aten::slice", [cache, dim, start0, endHalf, step], 1)
+            second = graph.create("aten::slice", [cache, dim, startHalf, endFull, step], 1)
+            first.output().setType(unpack.outputsAt(0).type())
+            second.output().setType(unpack.outputsAt(1).type())
+            first.insertBefore(node)
+            second.insertBefore(node)
+            unpack.outputsAt(0).replaceAllUsesWith(first.output())
+            unpack.outputsAt(1).replaceAllUsesWith(second.output())
+            unpack.destroy()
+            node.destroy()
+            patched += 1
+
+    visit(graph.block())
+    if patched != 6:
+        raise RuntimeError(f"Expected 6 packed attention-cache splits, patched {patched}")
+    torch._C._jit_pass_dce(graph)
+    torch._C._jit_pass_lint(graph)
+    print(f"Patched {patched} packed attention-cache split ops into static slices")
+    return script_module
+
+
 def export_coreml(module, inputs, name, ct):
     module.eval()
     with torch.no_grad():
@@ -118,6 +168,15 @@ def export_coreml(module, inputs, name, ct):
         # and removes TorchScript prim::Uninitialized branches before Core ML.
         traced = torch.jit.freeze(traced.eval())
         if name == "MeanVC2ASR":
+            traced = replace_attention_cache_splits(traced)
+            patched_outputs = traced(*inputs)
+            expected_values_for_check = expected if isinstance(expected, (tuple, list)) else (expected,)
+            patched_values_for_check = patched_outputs if isinstance(patched_outputs, (tuple, list)) else (patched_outputs,)
+            for actual_value, expected_value in zip(patched_values_for_check, expected_values_for_check):
+                if actual_value.shape != expected_value.shape or not torch.allclose(
+                    actual_value, expected_value, rtol=1e-5, atol=1e-6
+                ):
+                    raise RuntimeError("Static-slice attention cache patch changed ASR outputs")
             diagnostics = ROOT / "ios" / "Diagnostics"
             diagnostics.mkdir(parents=True, exist_ok=True)
             graph = traced.inlined_graph
