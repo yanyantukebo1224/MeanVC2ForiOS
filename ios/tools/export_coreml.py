@@ -85,7 +85,7 @@ class ASRChunkWithPos(torch.nn.Module):
             new_att_caches.append(new_att_cache[:, :, next_cache_start:, :])
             new_cnn_caches.append(new_cnn_cache.unsqueeze(0))
 
-        if self.encoder.normalize_before and self.encoder.final_norm:
+        if self.encoder.normalize_before:
             xs = self.encoder.after_norm(xs)
 
         return (
