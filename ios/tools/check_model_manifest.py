@@ -93,20 +93,13 @@ def main() -> int:
         fail("speaker asset size or separate CC BY-SA 3.0 attribution is missing")
 
     downloads = re.findall(r"\$base/([^?\s\"]+)\?download=true", workflow)
-    checksums = {
-        name: digest
-        for digest, name in re.findall(
-            r'echo "([0-9a-f]{64})\s+([^"]+)"\s*\|\s*shasum -a 256 -c -',
-            workflow,
-        )
-    }
     if downloads != names:
         fail(f"CI download list differs from Swift asset list: {downloads!r}")
-    for name, size, digest in assets:
+    if "python3 ios/tools/check_model_manifest.py --verify-files build/MeanVC2Models" not in workflow:
+        fail("CI does not run this manifest check against downloaded files")
+    for name, size, _ in assets:
         if size <= 0:
             fail(f"{name} has an invalid byte count")
-        if checksums.get(name) != digest:
-            fail(f"CI checksum for {name} differs from Swift")
 
     if args.verify_files:
         model_dir = args.verify_files.resolve()
