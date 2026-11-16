@@ -64,20 +64,32 @@ jobs:
           MODEL_PATH="$DATA_PATH/Library/Application Support/MeanVC2Models"
           mkdir -p "$MODEL_PATH"
           cp build/MeanVC2Models/*.onnx "$MODEL_PATH/"
+          STATUS_PATH="$DATA_PATH/Documents/onnx-pipeline-smoke-test.status"
+          mkdir -p "$DATA_PATH/Documents"
+          rm -f "$STATUS_PATH" "$DATA_PATH/Documents/onnx-pipeline-smoke-test.ok" "$DATA_PATH/Documents/onnx-pipeline-smoke-output.f32"
           xcrun simctl launch "$UDID" jp.yanyantukebo.meanvc2
           SMOKE_OK=0
+          LAST_STATUS=""
           for attempt in $(seq 1 180); do
-            if [ -f "$DATA_PATH/Documents/onnx-pipeline-smoke-test.ok" ] && [ "$(cat "$DATA_PATH/Documents/onnx-pipeline-smoke-test.ok")" = "PASS" ]; then
-              SMOKE_OK=1
-              break
+            if [ -f "$STATUS_PATH" ]; then
+              STATUS="$(cat "$STATUS_PATH")"
+              if [ "$STATUS" != "$LAST_STATUS" ]; then
+                echo "ONNX pipeline smoke status: $STATUS"
+                LAST_STATUS="$STATUS"
+              fi
+              case "$STATUS" in
+                PASS*) SMOKE_OK=1; break ;;
+                FAIL*) break ;;
+              esac
             fi
             sleep 1
           done
           if [ "$SMOKE_OK" != "1" ]; then
-            xcrun simctl spawn "$UDID" log show --last 5m --style compact --predicate 'subsystem == "jp.yanyantukebo.meanvc2"' || true
-            echo "ONNX pipeline smoke marker missing; app container: $DATA_PATH"
+            echo "ONNX pipeline smoke test failed or timed out. Last status: ${LAST_STATUS:-<no status file>}"
+            xcrun simctl spawn "$UDID" log show --last 5m --style compact --predicate 'process == "MeanVC2"' || true
             exit 1
           fi
+          test -f "$DATA_PATH/Documents/onnx-pipeline-smoke-test.ok"
           test -f "$DATA_PATH/Documents/onnx-pipeline-smoke-output.f32"
           cp "$DATA_PATH/Documents/onnx-pipeline-smoke-output.f32" build/SwiftOutput.f32
       - name: Set up Python for ONNX parity
