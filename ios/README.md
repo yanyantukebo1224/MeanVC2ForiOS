@@ -13,7 +13,8 @@ published MeanVC2 120ms_40ms graph set.
 - Optional WavLM-Large + ECAPA speaker encoder for reference-voice registration
 - AVFoundation audio-file decoding, mono downmix and 16 kHz resampling
 - iPhone Simulator smoke test that loads the graph set and runs the streaming
-  inference loop on synthetic audio
+  inference loop on synthetic zero audio and a zero speaker vector (execution
+  and numerical-parity check, not a voice-quality test)
 
 ## Model profile
 
@@ -37,12 +38,16 @@ Open `MeanVC2/MeanVC2.xcodeproj` in Xcode. Xcode resolves the official
 - Earlier Vocos Core ML spectral export and native iSTFT parity: passed; retained
   as diagnostics, no longer the active runtime path
 - ONNX model checksums: pinned and checked before model files are accepted
-- Native Swift ONNX streaming implementation: added; awaiting successful
-  Xcode/Simulator compilation and numerical smoke-test confirmation
-- Target speaker extraction: implemented; awaiting device-side verification
-- Live microphone capture, resampling and playback via AVAudioEngine: not yet
-  integrated
-- Real-time end-to-end conversion from microphone to speaker: not yet verified
+- Native Swift ONNX streaming implementation: integrated; Simulator build has
+  passed, but the streaming smoke test and Python numerical-parity check must
+  both pass before the graph path is considered verified
+- Target speaker extraction: integrated; awaiting device-side verification
+- Live microphone capture, resampling and playback via AVAudioEngine: wired to
+  the UI, but not yet verified on a physical iPhone/iPad
+- Audio interruptions, route changes, playback queue backpressure, sustained
+  latency, peak memory and thermal behavior: not yet verified
+- Real-time end-to-end conversion with a real registered speaker embedding:
+  not yet verified
 - Physical iPhone performance, thermal behavior, memory use and audio quality:
   not yet verified
 - Signed IPA: not yet produced
