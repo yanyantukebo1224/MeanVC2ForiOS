@@ -2,6 +2,19 @@ import SwiftUI
 import UniformTypeIdentifiers
 import os
 
+private enum MeanVC2SmokeDiagnostics {
+    static func write(_ status: String) {
+        #if DEBUG
+        guard let documents = FileManager.default.urls(
+            for: .documentDirectory, in: .userDomainMask
+        ).first else { return }
+        let statusURL = documents.appendingPathComponent("onnx-pipeline-smoke-test.status")
+        try? Data(status.utf8).write(to: statusURL, options: .atomic)
+        NSLog("[MeanVC2Smoke] %@", status)
+        #endif
+    }
+}
+
 struct ContentView: View {
     @State private var referenceURL: URL?
     @State private var showingImporter = false
@@ -175,27 +188,35 @@ struct ContentView: View {
     @MainActor
     private func prepareConversionEngine() async {
         guard stream == nil else { return }
+        MeanVC2SmokeDiagnostics.write("started")
         modelStatus = "変換モデルをダウンロードしています"
         do {
             let directory = try modelsDirectory()
             let store = MeanVC2ModelStore(root: directory)
             _ = try await store.ensureConversionModels()
+            MeanVC2SmokeDiagnostics.write("models-ready")
             let (runner, smokeOutput) = try await Task.detached(priority: .userInitiated) {
+                MeanVC2SmokeDiagnostics.write("loading-sessions")
                 let runner = try MeanVC2ONNXStream(modelDirectory: directory)
+                MeanVC2SmokeDiagnostics.write("sessions-ready")
                 runner.noiseProvider = { frameCount in [Float](repeating: 0, count: frameCount * 80) }
                 try runner.setTargetEmbedding([Float](repeating: 0, count: 256))
+                MeanVC2SmokeDiagnostics.write("conditioning-ready")
                 var output: [Float] = []
-                for _ in 0..<8 {
+                for index in 0..<8 {
+                    MeanVC2SmokeDiagnostics.write("processing-chunk=\(index + 1)")
                     output.append(contentsOf: try runner.process(
                         [Float](repeating: 0, count: 2_560)
                     ))
                 }
+                MeanVC2SmokeDiagnostics.write("processing-complete samples=\(output.count)")
                 return (runner, output)
             }.value
             guard !smokeOutput.isEmpty, smokeOutput.allSatisfy(\.isFinite) else {
                 throw MeanVC2ONNXError.invalidTensor("ONNX streaming smoke test returned no valid audio")
             }
             runner.noiseProvider = nil
+            MeanVC2SmokeDiagnostics.write("PASS samples=\(smokeOutput.count)")
             let savedEmbeddingURL = directory.appendingPathComponent("target-speaker.f32")
             if let savedData = try? Data(contentsOf: savedEmbeddingURL),
                savedData.count == 256 * MemoryLayout<Float>.size {
@@ -226,6 +247,7 @@ struct ContentView: View {
             )
             #endif
         } catch {
+            MeanVC2SmokeDiagnostics.write("FAIL \(error.localizedDescription)")
             modelError = "ONNXモデルの準備に失敗しました: \(error.localizedDescription)"
             modelStatus = "モデル準備に失敗"
             modelLogger.error("ONNX_PIPELINE_SMOKE_TEST_FAILED: \(error.localizedDescription)")
