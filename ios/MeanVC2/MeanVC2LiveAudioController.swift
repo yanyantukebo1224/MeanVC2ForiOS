@@ -6,7 +6,12 @@ import Foundation
 final class MeanVC2LiveAudioController {
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
-    private let processingQueue = DispatchQueue(label: "jp.yanyantukebo.meanvc2.audio-processing", qos: .userInitiated)
+    private let processingQueue = DispatchQueue(
+        label: "jp.yanyantukebo.meanvc2.audio-processing",
+        qos: .userInitiated
+    )
+    private let inputWorkSlots = DispatchSemaphore(value: 24)
+    private let maximumQueuedAudioSeconds = 0.6
     private let mono16k = AVAudioFormat(
         commonFormat: .pcmFormatFloat32,
         sampleRate: 16_000,
@@ -18,15 +23,55 @@ final class MeanVC2LiveAudioController {
     private var outputConverter: AVAudioConverter?
     private var outputFormat: AVAudioFormat?
     private var stream: MeanVC2ONNXStream?
+    private var activeStream: MeanVC2ONNXStream?
     private var pendingInput: [Float] = []
+    private var outputFrameBudget = MeanVC2AudioFrameBudget(maximumFrames: 28_800)
+    private var playbackGeneration: UInt64 = 0
     private var playerAttached = false
+    private var tapInstalled = false
     private(set) var isRunning = false
 
+    private var interruptionObserver: NSObjectProtocol?
+    private var routeChangeObserver: NSObjectProtocol?
+
     var onError: ((String) -> Void)?
+    var onRunningChanged: ((Bool, String) -> Void)?
+
+    init() {
+        let session = AVAudioSession.sharedInstance()
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: session,
+            queue: .main
+        ) { [weak self] notification in
+            self?.handleInterruption(notification)
+        }
+        routeChangeObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: session,
+            queue: .main
+        ) { [weak self] notification in
+            self?.handleRouteChange(notification)
+        }
+    }
+
+    deinit {
+        if let interruptionObserver {
+            NotificationCenter.default.removeObserver(interruptionObserver)
+        }
+        if let routeChangeObserver {
+            NotificationCenter.default.removeObserver(routeChangeObserver)
+        }
+    }
 
     func start(stream: MeanVC2ONNXStream) throws {
         guard !isRunning else { return }
+
+        // A new capture session must not inherit ASR, DiT, noise, or vocoder
+        // cache state from a previous run or an audio-route restart.
+        try stream.reset()
         self.stream = stream
+        activeStream = stream
 
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(
@@ -49,11 +94,23 @@ final class MeanVC2LiveAudioController {
         outputConverter = newOutputConverter
         outputFormat = hardwareOutputFormat
 
-        if !playerAttached {
+        processingQueue.sync {
+            pendingInput.removeAll(keepingCapacity: true)
+            outputFrameBudget = MeanVC2AudioFrameBudget(
+                maximumFrames: max(
+                    1,
+                    Int(hardwareOutputFormat.sampleRate * maximumQueuedAudioSeconds)
+                )
+            )
+        }
+
+        if playerAttached {
+            engine.disconnectNodeOutput(player)
+        } else {
             engine.attach(player)
-            engine.connect(player, to: engine.mainMixerNode, format: hardwareOutputFormat)
             playerAttached = true
         }
+        engine.connect(player, to: engine.mainMixerNode, format: hardwareOutputFormat)
 
         inputNode.installTap(
             onBus: 0,
@@ -62,35 +119,119 @@ final class MeanVC2LiveAudioController {
         ) { [weak self] buffer, _ in
             self?.consumeMicrophoneBuffer(buffer)
         }
+        tapInstalled = true
 
         engine.prepare()
         do {
             try engine.start()
             player.play()
-            pendingInput.removeAll(keepingCapacity: true)
             isRunning = true
+            onRunningChanged?(true, "")
         } catch {
-            inputNode.removeTap(onBus: 0)
+            engine.stop()
+            if tapInstalled {
+                inputNode.removeTap(onBus: 0)
+                tapInstalled = false
+            }
+            player.stop()
+            inputConverter = nil
+            outputConverter = nil
+            outputFormat = nil
+            isRunning = false
             throw error
         }
     }
 
     func stop() {
-        guard isRunning else { return }
-        engine.inputNode.removeTap(onBus: 0)
-        player.stop()
-        engine.stop()
-        isRunning = false
-        processingQueue.sync {
-            pendingInput.removeAll(keepingCapacity: true)
-            outputConverter = nil
-            stream = nil
+        stopEngine(clearStream: true, deactivateSession: true)
+        onRunningChanged?(false, "")
+    }
+
+    private func stopEngine(clearStream: Bool, deactivateSession: Bool) {
+        if engine.isRunning {
+            engine.stop()
         }
+        if tapInstalled {
+            engine.inputNode.removeTap(onBus: 0)
+            tapInstalled = false
+        }
+        player.stop()
+        isRunning = false
+
+        processingQueue.sync {
+            playbackGeneration &+= 1
+            outputFrameBudget.reset()
+            pendingInput.removeAll(keepingCapacity: true)
+            if clearStream {
+                stream = nil
+            }
+        }
+
         inputConverter = nil
-        try? AVAudioSession.sharedInstance().setActive(
-            false,
-            options: .notifyOthersOnDeactivation
-        )
+        outputConverter = nil
+        outputFormat = nil
+        if clearStream {
+            activeStream = nil
+        }
+        if deactivateSession {
+            try? AVAudioSession.sharedInstance().setActive(
+                false,
+                options: .notifyOthersOnDeactivation
+            )
+        }
+    }
+
+    private func handleInterruption(_ notification: Notification) {
+        guard let rawType = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: rawType) else {
+            return
+        }
+
+        switch type {
+        case .began:
+            guard isRunning else { return }
+            stopEngine(clearStream: false, deactivateSession: false)
+            onRunningChanged?(false, "音声セッションが中断されました。再開を待っています")
+        case .ended:
+            guard let activeStream else { return }
+            let rawOptions = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+            let options = AVAudioSession.InterruptionOptions(rawValue: rawOptions)
+            guard options.contains(.shouldResume) else {
+                onRunningChanged?(false, "音声セッションが終了しました。必要なら再度開始してください")
+                return
+            }
+            do {
+                try start(stream: activeStream)
+            } catch {
+                onRunningChanged?(false, "音声セッションを再開できませんでした")
+                reportError(error.localizedDescription)
+            }
+        @unknown default:
+            break
+        }
+    }
+
+    private func handleRouteChange(_ notification: Notification) {
+        guard isRunning, let activeStream,
+              let rawReason = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+              let reason = AVAudioSession.RouteChangeReason(rawValue: rawReason) else {
+            return
+        }
+
+        let shouldRestart =
+            reason == .oldDeviceUnavailable ||
+            reason == .newDeviceAvailable ||
+            reason == .categoryChange ||
+            reason == .override
+        guard shouldRestart else { return }
+
+        stopEngine(clearStream: false, deactivateSession: false)
+        do {
+            try start(stream: activeStream)
+        } catch {
+            onRunningChanged?(false, "音声出力先の変更後に再開できませんでした")
+            reportError(error.localizedDescription)
+        }
     }
 
     private func consumeMicrophoneBuffer(_ input: AVAudioPCMBuffer) {
@@ -127,7 +268,15 @@ final class MeanVC2LiveAudioController {
             start: samples,
             count: Int(converted.frameLength)
         ))
-        processingQueue.async { [weak self] in
+        let slots = inputWorkSlots
+        guard slots.wait(timeout: .now()) == .success else {
+            // Keep callback-to-inference memory bounded when the model cannot
+            // keep up with realtime input. The next accepted buffer continues
+            // through the same streaming state.
+            return
+        }
+        processingQueue.async { [weak self, slots] in
+            defer { slots.signal() }
             self?.processInput(copy)
         }
     }
@@ -194,7 +343,21 @@ final class MeanVC2LiveAudioController {
         guard status != .error, output.frameLength > 0 else {
             throw MeanVC2AudioFileError.conversionFailed("Audio playback resampling failed")
         }
-        player.scheduleBuffer(output, completionHandler: nil)
+
+        let frameCount = Int(output.frameLength)
+        guard outputFrameBudget.reserve(frameCount) else {
+            // Drop newest output instead of allowing the playback queue and
+            // end-to-end latency to grow without bound.
+            return
+        }
+        let generation = playbackGeneration
+        player.scheduleBuffer(output, completionHandler: { [weak self] in
+            guard let self else { return }
+            self.processingQueue.async {
+                guard self.playbackGeneration == generation else { return }
+                self.outputFrameBudget.release(frameCount)
+            }
+        })
     }
 
     private func reportError(_ message: String) {

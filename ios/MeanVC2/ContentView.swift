@@ -8,6 +8,9 @@ private enum MeanVC2SmokeDiagnostics {
         guard let documents = FileManager.default.urls(
             for: .documentDirectory, in: .userDomainMask
         ).first else { return }
+        try? FileManager.default.createDirectory(
+            at: documents, withIntermediateDirectories: true
+        )
         let statusURL = documents.appendingPathComponent("onnx-pipeline-smoke-test.status")
         try? Data(status.utf8).write(to: statusURL, options: .atomic)
         NSLog("[MeanVC2Smoke] %@", status)
@@ -72,6 +75,14 @@ struct ContentView: View {
                                 showingModelInfo = true
                                 liveAudio.stop()
                                 isLive = false
+                            }
+                        }
+                        liveAudio.onRunningChanged = { running, status in
+                            Task { @MainActor in
+                                isLive = running
+                                if !status.isEmpty {
+                                    modelStatus = status
+                                }
                             }
                         }
                         do {
@@ -188,69 +199,104 @@ struct ContentView: View {
     @MainActor
     private func prepareConversionEngine() async {
         guard stream == nil else { return }
-        MeanVC2SmokeDiagnostics.write("started")
-        modelStatus = "変換モデルをダウンロードしています"
+        let isCISmokeTest = ProcessInfo.processInfo.arguments.contains("--meanvc2-ci-smoke")
+        if isCISmokeTest {
+            MeanVC2SmokeDiagnostics.write("started")
+        }
+        modelStatus = "変換モデルを準備しています"
         do {
             let directory = try modelsDirectory()
             let store = MeanVC2ModelStore(root: directory)
             _ = try await store.ensureConversionModels()
-            MeanVC2SmokeDiagnostics.write("models-ready")
-            let (runner, smokeOutput) = try await Task.detached(priority: .userInitiated) {
-                MeanVC2SmokeDiagnostics.write("loading-sessions")
+            if isCISmokeTest {
+                MeanVC2SmokeDiagnostics.write("models-ready")
+            }
+
+            let (runner, smokeOutput, restoredTarget) = try await Task.detached(
+                priority: .userInitiated
+            ) { () throws -> (MeanVC2ONNXStream, [Float], Bool) in
+                if isCISmokeTest {
+                    MeanVC2SmokeDiagnostics.write("loading-sessions")
+                }
                 let runner = try MeanVC2ONNXStream(modelDirectory: directory)
-                MeanVC2SmokeDiagnostics.write("sessions-ready")
-                runner.noiseProvider = { frameCount in [Float](repeating: 0, count: frameCount * 80) }
-                try runner.setTargetEmbedding([Float](repeating: 0, count: 256))
-                MeanVC2SmokeDiagnostics.write("conditioning-ready")
                 var output: [Float] = []
-                for index in 0..<8 {
-                    MeanVC2SmokeDiagnostics.write("processing-chunk=\(index + 1)")
-                    output.append(contentsOf: try runner.process(
-                        [Float](repeating: 0, count: 2_560)
-                    ))
+
+                // Synthetic zero audio and a zero speaker vector are strictly
+                // a deterministic CI graph-execution fixture, never a user mode.
+                if isCISmokeTest {
+                    MeanVC2SmokeDiagnostics.write("sessions-ready")
+                    runner.noiseProvider = { frameCount in
+                        [Float](repeating: 0, count: frameCount * 80)
+                    }
+                    try runner.setTargetEmbedding([Float](repeating: 0, count: 256))
+                    MeanVC2SmokeDiagnostics.write("conditioning-ready")
+                    for index in 0..<8 {
+                        MeanVC2SmokeDiagnostics.write("processing-chunk=\(index + 1)")
+                        output.append(contentsOf: try runner.process(
+                            [Float](repeating: 0, count: 2_560)
+                        ))
+                    }
+                    guard !output.isEmpty, output.allSatisfy(\.isFinite) else {
+                        throw MeanVC2ONNXError.invalidTensor(
+                            "ONNX streaming smoke test returned no valid audio"
+                        )
+                    }
+                    runner.noiseProvider = nil
+                    MeanVC2SmokeDiagnostics.write(
+                        "PASS samples=\(output.count)"
+                    )
                 }
-                MeanVC2SmokeDiagnostics.write("processing-complete samples=\(output.count)")
-                return (runner, output)
+
+                let savedEmbeddingURL = directory.appendingPathComponent("target-speaker.f32")
+                var hasRestoredTarget = false
+                if let savedData = try? Data(contentsOf: savedEmbeddingURL),
+                   savedData.count == 256 * MemoryLayout<Float>.size {
+                    let savedEmbedding = savedData.withUnsafeBytes { raw in
+                        Array(raw.bindMemory(to: Float.self))
+                    }
+                    try runner.setTargetEmbedding(savedEmbedding)
+                    hasRestoredTarget = true
+                }
+                return (runner, output, hasRestoredTarget)
             }.value
-            guard !smokeOutput.isEmpty, smokeOutput.allSatisfy(\.isFinite) else {
-                throw MeanVC2ONNXError.invalidTensor("ONNX streaming smoke test returned no valid audio")
-            }
-            runner.noiseProvider = nil
-            MeanVC2SmokeDiagnostics.write("PASS samples=\(smokeOutput.count)")
-            let savedEmbeddingURL = directory.appendingPathComponent("target-speaker.f32")
-            if let savedData = try? Data(contentsOf: savedEmbeddingURL),
-               savedData.count == 256 * MemoryLayout<Float>.size {
-                let savedEmbedding = savedData.withUnsafeBytes { raw in
-                    Array(raw.bindMemory(to: Float.self))
+
+            if isCISmokeTest {
+                #if DEBUG
+                let documents = FileManager.default.urls(
+                    for: .documentDirectory, in: .userDomainMask
+                ).first!
+                try? Data("PASS".utf8).write(
+                    to: documents.appendingPathComponent("onnx-pipeline-smoke-test.ok"),
+                    options: .atomic
+                )
+                let waveformData = smokeOutput.withUnsafeBufferPointer { buffer -> Data in
+                    guard let base = buffer.baseAddress else { return Data() }
+                    return Data(
+                        bytes: base,
+                        count: buffer.count * MemoryLayout<Float>.size
+                    )
                 }
-                try runner.setTargetEmbedding(savedEmbedding)
-                targetReady = true
+                try? waveformData.write(
+                    to: documents.appendingPathComponent("onnx-pipeline-smoke-output.f32"),
+                    options: .atomic
+                )
+                #endif
             }
+
             stream = runner
+            targetReady = restoredTarget
             engineReady = true
-            modelStatus = "変換モデル準備完了"
-            modelLogger.info("ONNX_PIPELINE_SMOKE_TEST_PASSED samples=\(smokeOutput.count)")
-            #if DEBUG
-            let documents = FileManager.default.urls(
-                for: .documentDirectory, in: .userDomainMask
-            ).first!
-            try? Data("PASS".utf8).write(
-                to: documents.appendingPathComponent("onnx-pipeline-smoke-test.ok"),
-                options: .atomic
-            )
-            let waveformData = smokeOutput.withUnsafeBufferPointer { buffer in
-                Data(bytes: buffer.baseAddress!, count: buffer.count * MemoryLayout<Float>.size)
-            }
-            try? waveformData.write(
-                to: documents.appendingPathComponent("onnx-pipeline-smoke-output.f32"),
-                options: .atomic
-            )
-            #endif
+            modelStatus = restoredTarget
+                ? "変換モデルと変換先の声を準備しました"
+                : "変換モデル準備完了。変換先の声を登録してください"
+            modelLogger.info("ONNX_RUNTIME_READY")
         } catch {
-            MeanVC2SmokeDiagnostics.write("FAIL \(error.localizedDescription)")
+            if isCISmokeTest {
+                MeanVC2SmokeDiagnostics.write("FAIL \(error.localizedDescription)")
+            }
             modelError = "ONNXモデルの準備に失敗しました: \(error.localizedDescription)"
             modelStatus = "モデル準備に失敗"
-            modelLogger.error("ONNX_PIPELINE_SMOKE_TEST_FAILED: \(error.localizedDescription)")
+            modelLogger.error("ONNX_RUNTIME_FAILED: \(error.localizedDescription)")
         }
     }
 

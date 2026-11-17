@@ -44,11 +44,12 @@ inference does not require a network connection.
   noise state, followed by Vocos waveform synthesis
 
 The Swift implementation is intended to match the pinned ONNX reference
-runtime. CI feeds synthetic zero audio and a zero speaker vector to exercise
-the graph chain and compare the produced samples with the Python ONNX
-reference. That is a deterministic execution/parity test only: it does not
-measure perceptual voice quality, speaker similarity, or live microphone
-latency.
+runtime. CI launches the app with the explicit `--meanvc2-ci-smoke` argument
+and feeds synthetic zero audio plus a zero speaker vector to exercise the graph
+chain before comparing samples with the Python ONNX reference. Normal app
+startup does not run this synthetic conversion. The CI fixture is a
+deterministic execution/parity test only: it does not measure perceptual voice
+quality, speaker similarity, or live microphone latency.
 
 ## Core ML export status
 

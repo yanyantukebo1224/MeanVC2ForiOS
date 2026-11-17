@@ -18,6 +18,7 @@ permissions:
 jobs:
   build:
     runs-on: macos-15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Show Xcode version
@@ -34,6 +35,11 @@ jobs:
             -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             build
+      - name: Test bounded audio queue policy
+        run: |
+          set -euo pipefail
+          swiftc ios/MeanVC2/MeanVC2AudioFrameBudget.swift ios/tools/AudioFrameBudgetTests.swift -o build/AudioFrameBudgetTests
+          build/AudioFrameBudgetTests
       - name: Download and verify ONNX smoke-test models
         run: |
           set -euo pipefail
@@ -63,10 +69,10 @@ jobs:
           STATUS_PATH="$DATA_PATH/Documents/onnx-pipeline-smoke-test.status"
           mkdir -p "$DATA_PATH/Documents"
           rm -f "$STATUS_PATH" "$DATA_PATH/Documents/onnx-pipeline-smoke-test.ok" "$DATA_PATH/Documents/onnx-pipeline-smoke-output.f32"
-          xcrun simctl launch "$UDID" jp.yanyantukebo.meanvc2
+          xcrun simctl launch "$UDID" jp.yanyantukebo.meanvc2 --meanvc2-ci-smoke
           SMOKE_OK=0
           LAST_STATUS=""
-          for attempt in $(seq 1 180); do
+          for attempt in $(seq 1 600); do
             if [ -f "$STATUS_PATH" ]; then
               STATUS="$(cat "$STATUS_PATH")"
               if [ "$STATUS" != "$LAST_STATUS" ]; then

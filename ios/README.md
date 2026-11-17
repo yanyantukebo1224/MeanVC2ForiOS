@@ -12,9 +12,9 @@ published MeanVC2 120ms_40ms graph set.
   DiT flow-matching steps with per-layer KV caches, and Vocos waveform output
 - Optional WavLM-Large + ECAPA speaker encoder for reference-voice registration
 - AVFoundation audio-file decoding, mono downmix and 16 kHz resampling
-- iPhone Simulator smoke test that loads the graph set and runs the streaming
-  inference loop on synthetic zero audio and a zero speaker vector (execution
-  and numerical-parity check, not a voice-quality test)
+- CI-only iPhone Simulator smoke test, enabled by the explicit
+  `--meanvc2-ci-smoke` launch argument; normal app startup never runs a fake
+  zero-audio / zero-speaker conversion
 
 ## Model profile
 
@@ -43,9 +43,12 @@ Open `MeanVC2/MeanVC2.xcodeproj` in Xcode. Xcode resolves the official
   both pass before the graph path is considered verified
 - Target speaker extraction: integrated; awaiting device-side verification
 - Live microphone capture, resampling and playback via AVAudioEngine: wired to
-  the UI, but not yet verified on a physical iPhone/iPad
-- Audio interruptions, route changes, playback queue backpressure, sustained
-  latency, peak memory and thermal behavior: not yet verified
+  the UI; stream caches reset on each start, input work is bounded, and the
+  scheduled playback queue is capped at 600 ms
+- Audio interruption and route-change notifications: automatic restart is
+  implemented when iOS indicates resumption is allowed; not yet device-tested
+- Audio interruption / route-change recovery, queue-drop behavior, sustained
+  latency, peak memory and thermal behavior: not yet verified on hardware
 - Real-time end-to-end conversion with a real registered speaker embedding:
   not yet verified
 - Physical iPhone performance, thermal behavior, memory use and audio quality:
