@@ -27,6 +27,7 @@
 		B10000000000000000000010 /* MeanVC2SpeakerEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeanVC2SpeakerEncoder.swift; sourceTree = "<group>"; };
 		B10000000000000000000011 /* MeanVC2AudioFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeanVC2AudioFile.swift; sourceTree = "<group>"; };
 		B10000000000000000000012 /* MeanVC2LiveAudioController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeanVC2LiveAudioController.swift; sourceTree = "<group>"; };
+		B10000000000000000000013 /* MeanVC2AudioFrameBudget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeanVC2AudioFrameBudget.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
