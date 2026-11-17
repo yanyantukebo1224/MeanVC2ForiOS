@@ -243,7 +243,7 @@ struct ContentView: View {
                     }
                     runner.noiseProvider = nil
                     MeanVC2SmokeDiagnostics.write(
-                        "PASS samples=\(output.count)"
+                        "processing-complete samples=\(output.count)"
                     )
                 }
 
@@ -280,6 +280,7 @@ struct ContentView: View {
                     to: documents.appendingPathComponent("onnx-pipeline-smoke-output.f32"),
                     options: .atomic
                 )
+                MeanVC2SmokeDiagnostics.write("PASS samples=\(smokeOutput.count)")
                 #endif
             }
 

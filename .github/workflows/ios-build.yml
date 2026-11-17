@@ -88,6 +88,7 @@ jobs:
           done
           if [ "$SMOKE_OK" != "1" ]; then
             echo "ONNX pipeline smoke test failed or timed out. Last status: ${LAST_STATUS:-<no status file>}"
+            if [ -f "$STATUS_PATH" ]; then cat "$STATUS_PATH"; fi
             xcrun simctl spawn "$UDID" log show --last 5m --style compact --predicate 'process == "MeanVC2"' || true
             exit 1
           fi
