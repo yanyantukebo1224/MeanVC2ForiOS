@@ -15,6 +15,7 @@
 		A10000000000000000000009 /* MeanVC2SpeakerEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000010 /* MeanVC2SpeakerEncoder.swift */; };
 		A10000000000000000000010 /* MeanVC2AudioFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* MeanVC2AudioFile.swift */; };
 		A10000000000000000000011 /* MeanVC2LiveAudioController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* MeanVC2LiveAudioController.swift */; };
+		A10000000000000000000012 /* MeanVC2AudioFrameBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* MeanVC2AudioFrameBudget.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
