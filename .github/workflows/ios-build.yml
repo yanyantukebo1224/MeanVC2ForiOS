@@ -30,6 +30,7 @@ jobs:
           xcodebuild \
             -project ios/MeanVC2/MeanVC2.xcodeproj \
             -scheme MeanVC2 \
+            -configuration Debug \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build/DerivedData \
@@ -40,6 +41,11 @@ jobs:
           set -euo pipefail
           swiftc ios/MeanVC2/MeanVC2AudioFrameBudget.swift ios/tools/AudioFrameBudgetTests.swift -o build/AudioFrameBudgetTests
           build/AudioFrameBudgetTests
+      - name: Test CI smoke diagnostics writer
+        run: |
+          set -euo pipefail
+          swiftc ios/MeanVC2/MeanVC2SmokeDiagnostics.swift ios/tools/SmokeDiagnosticsTests.swift -o build/SmokeDiagnosticsTests
+          build/SmokeDiagnosticsTests
       - name: Download and verify ONNX smoke-test models
         run: |
           set -euo pipefail
