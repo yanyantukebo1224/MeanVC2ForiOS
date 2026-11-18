@@ -2,22 +2,6 @@ import SwiftUI
 import UniformTypeIdentifiers
 import os
 
-private enum MeanVC2SmokeDiagnostics {
-    static func write(_ status: String) {
-        #if DEBUG
-        guard let documents = FileManager.default.urls(
-            for: .documentDirectory, in: .userDomainMask
-        ).first else { return }
-        try? FileManager.default.createDirectory(
-            at: documents, withIntermediateDirectories: true
-        )
-        let statusURL = documents.appendingPathComponent("onnx-pipeline-smoke-test.status")
-        try? Data(status.utf8).write(to: statusURL, options: .atomic)
-        NSLog("[MeanVC2Smoke] %@", status)
-        #endif
-    }
-}
-
 struct ContentView: View {
     @State private var referenceURL: URL?
     @State private var showingImporter = false
@@ -199,24 +183,25 @@ struct ContentView: View {
     @MainActor
     private func prepareConversionEngine() async {
         guard stream == nil else { return }
-        let isCISmokeTest = ProcessInfo.processInfo.arguments.contains("--meanvc2-ci-smoke")
-        if isCISmokeTest {
-            MeanVC2SmokeDiagnostics.write("started")
-        }
+        let smokeDiagnostics = MeanVC2SmokeDiagnostics.current()
+        let isCISmokeTest = smokeDiagnostics != nil
         modelStatus = "変換モデルを準備しています"
         do {
+            if let smokeDiagnostics {
+                try smokeDiagnostics.write("started")
+            }
             let directory = try modelsDirectory()
             let store = MeanVC2ModelStore(root: directory)
             _ = try await store.ensureConversionModels()
             if isCISmokeTest {
-                MeanVC2SmokeDiagnostics.write("models-ready")
+                try smokeDiagnostics?.write("models-ready")
             }
 
             let (runner, smokeOutput, restoredTarget) = try await Task.detached(
                 priority: .userInitiated
             ) { () throws -> (MeanVC2ONNXStream, [Float], Bool) in
                 if isCISmokeTest {
-                    MeanVC2SmokeDiagnostics.write("loading-sessions")
+                    try smokeDiagnostics?.write("loading-sessions")
                 }
                 let runner = try MeanVC2ONNXStream(modelDirectory: directory)
                 var output: [Float] = []
@@ -224,14 +209,14 @@ struct ContentView: View {
                 // Synthetic zero audio and a zero speaker vector are strictly
                 // a deterministic CI graph-execution fixture, never a user mode.
                 if isCISmokeTest {
-                    MeanVC2SmokeDiagnostics.write("sessions-ready")
+                    try smokeDiagnostics?.write("sessions-ready")
                     runner.noiseProvider = { frameCount in
                         [Float](repeating: 0, count: frameCount * 80)
                     }
                     try runner.setTargetEmbedding([Float](repeating: 0, count: 256))
-                    MeanVC2SmokeDiagnostics.write("conditioning-ready")
+                    try smokeDiagnostics?.write("conditioning-ready")
                     for index in 0..<8 {
-                        MeanVC2SmokeDiagnostics.write("processing-chunk=\(index + 1)")
+                        try smokeDiagnostics?.write("processing-chunk=\(index + 1)")
                         output.append(contentsOf: try runner.process(
                             [Float](repeating: 0, count: 2_560)
                         ))
@@ -242,7 +227,7 @@ struct ContentView: View {
                         )
                     }
                     runner.noiseProvider = nil
-                    MeanVC2SmokeDiagnostics.write(
+                    try smokeDiagnostics?.write(
                         "processing-complete samples=\(output.count)"
                     )
                 }
@@ -260,28 +245,8 @@ struct ContentView: View {
                 return (runner, output, hasRestoredTarget)
             }.value
 
-            if isCISmokeTest {
-                #if DEBUG
-                let documents = FileManager.default.urls(
-                    for: .documentDirectory, in: .userDomainMask
-                ).first!
-                try? Data("PASS".utf8).write(
-                    to: documents.appendingPathComponent("onnx-pipeline-smoke-test.ok"),
-                    options: .atomic
-                )
-                let waveformData = smokeOutput.withUnsafeBufferPointer { buffer -> Data in
-                    guard let base = buffer.baseAddress else { return Data() }
-                    return Data(
-                        bytes: base,
-                        count: buffer.count * MemoryLayout<Float>.size
-                    )
-                }
-                try? waveformData.write(
-                    to: documents.appendingPathComponent("onnx-pipeline-smoke-output.f32"),
-                    options: .atomic
-                )
-                MeanVC2SmokeDiagnostics.write("PASS samples=\(smokeOutput.count)")
-                #endif
+            if let smokeDiagnostics {
+                try smokeDiagnostics.writeOutput(smokeOutput)
             }
 
             stream = runner
@@ -293,7 +258,7 @@ struct ContentView: View {
             modelLogger.info("ONNX_RUNTIME_READY")
         } catch {
             if isCISmokeTest {
-                MeanVC2SmokeDiagnostics.write("FAIL \(error.localizedDescription)")
+                try? smokeDiagnostics.write("FAIL \(error.localizedDescription)")
             }
             modelError = "ONNXモデルの準備に失敗しました: \(error.localizedDescription)"
             modelStatus = "モデル準備に失敗"
