@@ -258,7 +258,7 @@ struct ContentView: View {
             modelLogger.info("ONNX_RUNTIME_READY")
         } catch {
             if isCISmokeTest {
-                try? smokeDiagnostics.write("FAIL \(error.localizedDescription)")
+                try? smokeDiagnostics?.write("FAIL \(error.localizedDescription)")
             }
             modelError = "ONNXモデルの準備に失敗しました: \(error.localizedDescription)"
             modelStatus = "モデル準備に失敗"
