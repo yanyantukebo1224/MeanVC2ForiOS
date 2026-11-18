@@ -16,6 +16,7 @@
 		A10000000000000000000010 /* MeanVC2AudioFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000011 /* MeanVC2AudioFile.swift */; };
 		A10000000000000000000011 /* MeanVC2LiveAudioController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000012 /* MeanVC2LiveAudioController.swift */; };
 		A10000000000000000000012 /* MeanVC2AudioFrameBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* MeanVC2AudioFrameBudget.swift */; };
+		A10000000000000000000013 /* MeanVC2SmokeDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* MeanVC2SmokeDiagnostics.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +30,7 @@
 		B10000000000000000000011 /* MeanVC2AudioFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeanVC2AudioFile.swift; sourceTree = "<group>"; };
 		B10000000000000000000012 /* MeanVC2LiveAudioController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeanVC2LiveAudioController.swift; sourceTree = "<group>"; };
 		B10000000000000000000013 /* MeanVC2AudioFrameBudget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeanVC2AudioFrameBudget.swift; sourceTree = "<group>"; };
+		B10000000000000000000014 /* MeanVC2SmokeDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeanVC2SmokeDiagnostics.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -38,7 +40,7 @@
 /* Begin PBXGroup section */
 		D10000000000000000000001 = {
 			isa = PBXGroup;
-			children = (B10000000000000000000001 /* MeanVC2App.swift */, B10000000000000000000002 /* ContentView.swift */, B10000000000000000000007 /* ONNXRuntimeEnvironment.swift */, B10000000000000000000008 /* MeanVC2ModelStore.swift */, B10000000000000000000009 /* MeanVC2ONNXStream.swift */, B10000000000000000000010 /* MeanVC2SpeakerEncoder.swift */, B10000000000000000000011 /* MeanVC2AudioFile.swift */, B10000000000000000000013 /* MeanVC2AudioFrameBudget.swift */, D10000000000000000000003 /* Products */,);
+			children = (B10000000000000000000001 /* MeanVC2App.swift */, B10000000000000000000002 /* ContentView.swift */, B10000000000000000000007 /* ONNXRuntimeEnvironment.swift */, B10000000000000000000008 /* MeanVC2ModelStore.swift */, B10000000000000000000009 /* MeanVC2ONNXStream.swift */, B10000000000000000000010 /* MeanVC2SpeakerEncoder.swift */, B10000000000000000000011 /* MeanVC2AudioFile.swift */, B10000000000000000000013 /* MeanVC2AudioFrameBudget.swift */, B10000000000000000000014 /* MeanVC2SmokeDiagnostics.swift */, D10000000000000000000003 /* Products */,);
 			sourceTree = "<group>";
 		};
 		D10000000000000000000003 /* Products */ = {
@@ -87,7 +89,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		C10000000000000000000002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001 /* MeanVC2App.swift in Sources */, A10000000000000000000002 /* ContentView.swift in Sources */, A10000000000000000000006 /* ONNXRuntimeEnvironment.swift in Sources */, A10000000000000000000007 /* MeanVC2ModelStore.swift in Sources */, A10000000000000000000008 /* MeanVC2ONNXStream.swift in Sources */, A10000000000000000000009 /* MeanVC2SpeakerEncoder.swift in Sources */, A10000000000000000000010 /* MeanVC2AudioFile.swift in Sources */, A10000000000000000000011 /* MeanVC2LiveAudioController.swift in Sources */, A10000000000000000000012 /* MeanVC2AudioFrameBudget.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0; };
+		C10000000000000000000002 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001 /* MeanVC2App.swift in Sources */, A10000000000000000000002 /* ContentView.swift in Sources */, A10000000000000000000006 /* ONNXRuntimeEnvironment.swift in Sources */, A10000000000000000000007 /* MeanVC2ModelStore.swift in Sources */, A10000000000000000000008 /* MeanVC2ONNXStream.swift in Sources */, A10000000000000000000009 /* MeanVC2SpeakerEncoder.swift in Sources */, A10000000000000000000010 /* MeanVC2AudioFile.swift in Sources */, A10000000000000000000011 /* MeanVC2LiveAudioController.swift in Sources */, A10000000000000000000012 /* MeanVC2AudioFrameBudget.swift in Sources */, A10000000000000000000013 /* MeanVC2SmokeDiagnostics.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
