@@ -33,10 +33,8 @@ struct SmokeDiagnosticsTests {
         let statusURL = root.appendingPathComponent(
             MeanVC2SmokeDiagnostics.statusFileName
         )
-        check(
-            try String(contentsOf: statusURL, encoding: .utf8) == "app-init",
-            "status should be atomically written"
-        )
+        let initialStatus = try String(contentsOf: statusURL, encoding: .utf8)
+        check(initialStatus == "app-init", "status should be atomically written")
 
         let samples: [Float] = [0.25, -0.5, 1.0]
         try diagnostics.writeOutput(samples)
@@ -48,19 +46,15 @@ struct SmokeDiagnosticsTests {
             Array($0.bindMemory(to: Float.self))
         }
         check(decoded == samples, "waveform artifact should preserve Float32 samples")
-        check(
-            try String(
-                contentsOf: root.appendingPathComponent(
-                    MeanVC2SmokeDiagnostics.successFileName
-                ),
-                encoding: .utf8
-            ) == "PASS",
-            "success marker should be written after waveform output"
+        let successMarker = try String(
+            contentsOf: root.appendingPathComponent(
+                MeanVC2SmokeDiagnostics.successFileName
+            ),
+            encoding: .utf8
         )
-        check(
-            try String(contentsOf: statusURL, encoding: .utf8) == "PASS samples=3",
-            "PASS status should be the final status"
-        )
+        check(successMarker == "PASS", "success marker should be written after waveform output")
+        let finalStatus = try String(contentsOf: statusURL, encoding: .utf8)
+        check(finalStatus == "PASS samples=3", "PASS status should be the final status")
 
         let invalidRoot = root.appendingPathComponent("invalid")
         let invalid = MeanVC2SmokeDiagnostics(directory: invalidRoot)
