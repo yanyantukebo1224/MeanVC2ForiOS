@@ -75,7 +75,22 @@ jobs:
           STATUS_PATH="$DATA_PATH/Documents/onnx-pipeline-smoke-test.status"
           mkdir -p "$DATA_PATH/Documents"
           rm -f "$STATUS_PATH" "$DATA_PATH/Documents/onnx-pipeline-smoke-test.ok" "$DATA_PATH/Documents/onnx-pipeline-smoke-output.f32"
-          xcrun simctl launch "$UDID" jp.yanyantukebo.meanvc2 --meanvc2-ci-smoke
+          echo "Simulator app container: $DATA_PATH"
+          SIMCTL_CHILD_MEANVC2_CI_SMOKE=1 xcrun simctl launch "$UDID" jp.yanyantukebo.meanvc2 --meanvc2-ci-smoke
+          APP_INIT_SEEN=0
+          for attempt in $(seq 1 30); do
+            if [ -f "$STATUS_PATH" ]; then
+              echo "ONNX pipeline smoke bootstrap: $(cat "$STATUS_PATH")"
+              APP_INIT_SEEN=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$APP_INIT_SEEN" != "1" ]; then
+            echo "App launched but did not create its smoke diagnostic status within 30 seconds."
+            xcrun simctl spawn "$UDID" log show --last 15m --style compact --predicate 'process == "MeanVC2"' || true
+            exit 1
+          fi
           SMOKE_OK=0
           LAST_STATUS=""
           for attempt in $(seq 1 600); do

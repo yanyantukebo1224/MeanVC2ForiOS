@@ -1,10 +1,11 @@
 import Foundation
 
 /// Writes CI-only simulator smoke diagnostics when the explicit launch
-/// argument is present. This is intentionally not gated by DEBUG: the
-/// workflow must receive diagnostics regardless of the selected build config.
+/// argument or simulator-injected environment flag is present. This is
+/// intentionally not gated by DEBUG.
 struct MeanVC2SmokeDiagnostics: Sendable {
     static let launchArgument = "--meanvc2-ci-smoke"
+    static let environmentKey = "MEANVC2_CI_SMOKE"
     static let statusFileName = "onnx-pipeline-smoke-test.status"
     static let successFileName = "onnx-pipeline-smoke-test.ok"
     static let outputFileName = "onnx-pipeline-smoke-output.f32"
@@ -18,12 +19,15 @@ struct MeanVC2SmokeDiagnostics: Sendable {
 
     static func current(
         arguments: [String] = ProcessInfo.processInfo.arguments,
+        environment: [String: String] = ProcessInfo.processInfo.environment,
         directory: URL? = FileManager.default.urls(
             for: .documentDirectory,
             in: .userDomainMask
         ).first
     ) -> MeanVC2SmokeDiagnostics? {
-        guard arguments.contains(launchArgument), let directory else {
+        let argumentEnabled = arguments.contains(launchArgument)
+        let environmentEnabled = environment[environmentKey] == "1"
+        guard (argumentEnabled || environmentEnabled), let directory else {
             return nil
         }
         return MeanVC2SmokeDiagnostics(directory: directory)

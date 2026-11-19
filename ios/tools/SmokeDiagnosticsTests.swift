@@ -17,18 +17,46 @@ struct SmokeDiagnosticsTests {
 
         check(
             MeanVC2SmokeDiagnostics.current(
-                arguments: ["MeanVC2"], directory: root
+                arguments: ["MeanVC2"], environment: [:], directory: root
             ) == nil,
-            "smoke diagnostics must remain disabled without the launch flag"
+            "smoke diagnostics must remain disabled without an explicit signal"
         )
 
-        let diagnostics = MeanVC2SmokeDiagnostics.current(
+        let argumentDiagnostics = MeanVC2SmokeDiagnostics.current(
             arguments: ["MeanVC2", MeanVC2SmokeDiagnostics.launchArgument],
+            environment: [:],
             directory: root
         )
-        check(diagnostics != nil, "explicit launch flag should enable diagnostics")
-        guard let diagnostics else { return }
+        check(argumentDiagnostics != nil, "explicit launch argument should enable diagnostics")
 
+        let environmentDiagnostics = MeanVC2SmokeDiagnostics.current(
+            arguments: ["MeanVC2"],
+            environment: [MeanVC2SmokeDiagnostics.environmentKey: "1"],
+            directory: root
+        )
+        check(environmentDiagnostics != nil, "simulator-injected environment flag should enable diagnostics")
+
+        for disabledValue in ["0", "true", ""] {
+            check(
+                MeanVC2SmokeDiagnostics.current(
+                    arguments: ["MeanVC2"],
+                    environment: [MeanVC2SmokeDiagnostics.environmentKey: disabledValue],
+                    directory: root
+                ) == nil,
+                "environment value \(disabledValue.debugDescription) must not enable diagnostics"
+            )
+        }
+
+        check(
+            MeanVC2SmokeDiagnostics.current(
+                arguments: ["MeanVC2"],
+                environment: [MeanVC2SmokeDiagnostics.environmentKey: "1"],
+                directory: nil
+            ) == nil,
+            "diagnostics must remain unavailable when the document directory is missing"
+        )
+
+        guard let diagnostics = environmentDiagnostics else { return }
         try diagnostics.write("app-init")
         let statusURL = root.appendingPathComponent(
             MeanVC2SmokeDiagnostics.statusFileName
