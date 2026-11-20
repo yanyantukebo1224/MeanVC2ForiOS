@@ -17,20 +17,32 @@ struct MeanVC2SmokeDiagnostics: Sendable {
 
     let directory: URL
 
+    static func fallbackDirectory(homeDirectory: URL) -> URL {
+        homeDirectory.appendingPathComponent("Documents", isDirectory: true)
+    }
+
     static func current(
         arguments: [String] = ProcessInfo.processInfo.arguments,
         environment: [String: String] = ProcessInfo.processInfo.environment,
         directory: URL? = FileManager.default.urls(
             for: .documentDirectory,
             in: .userDomainMask
-        ).first
+        ).first,
+        homeDirectory: URL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
     ) -> MeanVC2SmokeDiagnostics? {
         let argumentEnabled = arguments.contains(launchArgument)
         let environmentEnabled = environment[environmentKey] == "1"
-        guard (argumentEnabled || environmentEnabled), let directory else {
+        let resolvedDirectory = directory ?? fallbackDirectory(homeDirectory: homeDirectory)
+        NSLog(
+            "[MeanVC2Smoke] bootstrap argument=%@ environment=%@ documents=%@",
+            argumentEnabled ? "1" : "0",
+            environmentEnabled ? "1" : "0",
+            resolvedDirectory.path
+        )
+        guard argumentEnabled || environmentEnabled else {
             return nil
         }
-        return MeanVC2SmokeDiagnostics(directory: directory)
+        return MeanVC2SmokeDiagnostics(directory: resolvedDirectory)
     }
 
     func write(_ status: String) throws {

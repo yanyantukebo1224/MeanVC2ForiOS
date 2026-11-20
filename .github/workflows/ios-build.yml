@@ -76,7 +76,17 @@ jobs:
           mkdir -p "$DATA_PATH/Documents"
           rm -f "$STATUS_PATH" "$DATA_PATH/Documents/onnx-pipeline-smoke-test.ok" "$DATA_PATH/Documents/onnx-pipeline-smoke-output.f32"
           echo "Simulator app container: $DATA_PATH"
-          SIMCTL_CHILD_MEANVC2_CI_SMOKE=1 xcrun simctl launch "$UDID" jp.yanyantukebo.meanvc2 --meanvc2-ci-smoke
+          SIMULATOR_CONSOLE_LOG="build/simulator-console.log"
+          SIMCTL_LAUNCH_PID=""
+          cleanup_simulator_console() {
+            if [ -n "${SIMCTL_LAUNCH_PID:-}" ]; then
+              kill "$SIMCTL_LAUNCH_PID" 2>/dev/null || true
+              wait "$SIMCTL_LAUNCH_PID" 2>/dev/null || true
+            fi
+          }
+          trap cleanup_simulator_console EXIT
+          SIMCTL_CHILD_MEANVC2_CI_SMOKE=1 xcrun simctl launch --console --terminate-running-process "$UDID" jp.yanyantukebo.meanvc2 --meanvc2-ci-smoke >"$SIMULATOR_CONSOLE_LOG" 2>&1 &
+          SIMCTL_LAUNCH_PID=$!
           APP_INIT_SEEN=0
           for attempt in $(seq 1 30); do
             if [ -f "$STATUS_PATH" ]; then
@@ -87,8 +97,13 @@ jobs:
             sleep 1
           done
           if [ "$APP_INIT_SEEN" != "1" ]; then
-            echo "App launched but did not create its smoke diagnostic status within 30 seconds."
-            xcrun simctl spawn "$UDID" log show --last 15m --style compact --predicate 'process == "MeanVC2"' || true
+            echo "App did not create its smoke diagnostic status within 30 seconds."
+            echo "--- simctl --console output ---"
+            cat "$SIMULATOR_CONSOLE_LOG" || true
+            echo "--- simulator unified log (app, dyld, bundle identifier) ---"
+            xcrun simctl spawn "$UDID" log show --last 5m --style compact --predicate 'process == "MeanVC2" OR process == "dyld" OR eventMessage CONTAINS[c] "jp.yanyantukebo.meanvc2"' || true
+            echo "--- app launch service state ---"
+            xcrun simctl spawn "$UDID" launchctl list | grep -F "jp.yanyantukebo.meanvc2" || true
             exit 1
           fi
           SMOKE_OK=0
@@ -110,7 +125,9 @@ jobs:
           if [ "$SMOKE_OK" != "1" ]; then
             echo "ONNX pipeline smoke test failed or timed out. Last status: ${LAST_STATUS:-<no status file>}"
             if [ -f "$STATUS_PATH" ]; then cat "$STATUS_PATH"; fi
-            xcrun simctl spawn "$UDID" log show --last 5m --style compact --predicate 'process == "MeanVC2"' || true
+            echo "--- simctl --console output ---"
+            cat "$SIMULATOR_CONSOLE_LOG" || true
+            xcrun simctl spawn "$UDID" log show --last 5m --style compact --predicate 'process == "MeanVC2" OR process == "dyld" OR eventMessage CONTAINS[c] "jp.yanyantukebo.meanvc2"' || true
             exit 1
           fi
           test -f "$DATA_PATH/Documents/onnx-pipeline-smoke-test.ok"

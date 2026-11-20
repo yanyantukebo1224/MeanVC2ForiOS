@@ -47,13 +47,28 @@ struct SmokeDiagnosticsTests {
             )
         }
 
+        let fallbackHome = root.appendingPathComponent("fallback-home", isDirectory: true)
+        let expectedFallback = fallbackHome.appendingPathComponent("Documents", isDirectory: true)
         check(
-            MeanVC2SmokeDiagnostics.current(
-                arguments: ["MeanVC2"],
-                environment: [MeanVC2SmokeDiagnostics.environmentKey: "1"],
-                directory: nil
-            ) == nil,
-            "diagnostics must remain unavailable when the document directory is missing"
+            MeanVC2SmokeDiagnostics.fallbackDirectory(homeDirectory: fallbackHome) == expectedFallback,
+            "missing Foundation document URL should fall back to the app container Documents path"
+        )
+        let fallbackDiagnostics = MeanVC2SmokeDiagnostics.current(
+            arguments: ["MeanVC2"],
+            environment: [MeanVC2SmokeDiagnostics.environmentKey: "1"],
+            directory: nil,
+            homeDirectory: fallbackHome
+        )
+        check(fallbackDiagnostics?.directory == expectedFallback,
+              "explicit CI signal should remain enabled when Foundation omits the document URL")
+        try fallbackDiagnostics?.write("fallback-init")
+        check(
+            FileManager.default.fileExists(
+                atPath: expectedFallback.appendingPathComponent(
+                    MeanVC2SmokeDiagnostics.statusFileName
+                ).path
+            ),
+            "fallback Documents directory should accept a bootstrap status file"
         )
 
         guard let diagnostics = environmentDiagnostics else { return }
