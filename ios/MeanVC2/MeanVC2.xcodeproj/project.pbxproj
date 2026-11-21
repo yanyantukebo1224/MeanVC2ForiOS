@@ -106,7 +106,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		F20000000000000000000001 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/microsoft/onnxruntime-swift-package-manager"; requirement = {kind = upToNextMajorVersion; minimumVersion = 1.24.2; }; };
+		F20000000000000000000001 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/microsoft/onnxruntime-swift-package-manager.git"; requirement = {kind = upToNextMajorVersion; minimumVersion = 1.24.2; }; };
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
