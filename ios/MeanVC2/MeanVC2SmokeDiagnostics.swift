@@ -1,8 +1,8 @@
 import Foundation
 
-/// Writes CI-only simulator smoke diagnostics when the explicit launch
-/// argument or simulator-injected environment flag is present. This is
-/// intentionally not gated by DEBUG.
+/// Writes CI-only simulator smoke diagnostics when an explicit launch
+/// argument, simulator-injected environment flag, or one-shot Documents marker
+/// is present. This is intentionally not gated by DEBUG.
 struct MeanVC2SmokeDiagnostics: Sendable {
     static let launchArgument = "--meanvc2-ci-smoke"
     static let environmentKey = "MEANVC2_CI_SMOKE"
