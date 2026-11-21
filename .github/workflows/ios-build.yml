@@ -20,7 +20,11 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 25
     steps:
+      # This job only reads its own repository. Do not persist the repo-scoped
+      # GITHUB_TOKEN into .git/config: SwiftPM also clones unrelated public repos.
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Show Xcode version
         run: xcodebuild -version
       - name: Resolve Swift package dependencies
