@@ -34,8 +34,9 @@ jobs:
           fi
           pod --version
           cd ios
-          pod install --repo-update
-          grep -F "onnxruntime-objc (1.24.3)" Podfile.lock
+          pod install
+          grep -F "onnxruntime-c (1.24.3)" Podfile.lock
+          grep -E "onnxruntime-objc(/Core)? \\(1\\.24\\.3\\)" Podfile.lock
       - name: Build iOS Simulator app
         run: |
           xcodebuild \

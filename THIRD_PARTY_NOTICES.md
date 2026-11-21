@@ -24,10 +24,19 @@ requirements.
 
 ## ONNX Runtime
 
-The iOS runtime is provided by Microsoft's
-[onnxruntime-swift-package-manager](https://github.com/microsoft/onnxruntime-swift-package-manager),
-which is distributed under the MIT License. The ONNX Runtime native library
-and Objective-C bindings retain their upstream licenses.
+The Objective-C API source files are taken from Microsoft's
+[onnxruntime](https://github.com/microsoft/onnxruntime) tag `v1.24.3` and are
+distributed under the MIT License.
+
+The iOS C/C++ XCFramework is ONNX Runtime `v1.24.3`. Its transport mirror is
+the [`vendor-onnxruntime-c-1.24.3` release](https://github.com/baijum/ukulele-companion/releases/tag/vendor-onnxruntime-c-1.24.3)
+in `baijum/ukulele-companion`. The release metadata identifies Microsoft's
+upstream `v1.24.3` archive, records the original and Azure fallback URLs, and
+publishes SHA-256
+`b7eedc45932bac758ffd057cac0feb3f682269e47750b159e4c865145cbf0a8e`.
+The local CocoaPods specification pins that GitHub asset and digest; TLS
+verification is not disabled. The mirror release identifies the binary under
+the MIT License, and the archive's upstream license file is preserved.
 
 ## Responsible use
 

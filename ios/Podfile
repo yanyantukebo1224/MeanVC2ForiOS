@@ -4,7 +4,8 @@ project 'MeanVC2/MeanVC2.xcodeproj'
 use_frameworks!
 
 target 'MeanVC2' do
-  pod 'onnxruntime-objc', '1.24.3'
+  pod 'onnxruntime-c', :podspec => 'Podspecs/onnxruntime-c.podspec.json'
+  pod 'onnxruntime-objc', :podspec => 'Podspecs/onnxruntime-objc.podspec.json'
 end
 
 # Xcode 26.3 currently diagnoses quoted sibling-header imports in this
@@ -12,7 +13,7 @@ end
 # to the ONNX Runtime Objective-C pod target.
 post_install do |installer|
   installer.pods_project.targets.each do |target|
-    next unless target.name == 'onnxruntime-objc'
+    next unless target.name.start_with?('onnxruntime-objc')
 
     target.build_configurations.each do |config|
       config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
