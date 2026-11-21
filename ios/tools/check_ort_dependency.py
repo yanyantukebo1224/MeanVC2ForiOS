@@ -23,10 +23,11 @@ assert c_spec["source"]["http"] == expected_url
 assert c_spec["source"]["sha256"] == expected_sha
 assert objc_spec["name"] == "onnxruntime-objc" and objc_spec["version"] == "1.24.3"
 assert objc_spec["license"]["type"] == "MIT"
-assert objc_spec["source"] == {
-    "git": "https://github.com/microsoft/onnxruntime.git",
-    "tag": "v1.24.3",
-}
+assert objc_spec["source"]["http"] == "https://onnxruntimepackages.z14.web.core.windows.net/pod-archive-onnxruntime-objc-1.24.3.zip"
+objc_sha = objc_spec["source"].get("sha256")
+assert objc_sha is None or (
+    len(objc_sha) == 64 and all(character in "0123456789abcdef" for character in objc_sha)
+)
 assert objc_spec["subspecs"][0]["dependencies"]["onnxruntime-c"] == ["1.24.3"]
 assert "Podspecs/onnxruntime-c.podspec.json" in podfile
 assert "Podspecs/onnxruntime-objc.podspec.json" in podfile
@@ -34,4 +35,4 @@ assert "download.onnxruntime.ai" not in podfile
 assert "download.onnxruntime.ai" not in json.dumps(c_spec)
 assert "download.onnxruntime.ai" not in json.dumps(objc_spec)
 
-print("ONNX Runtime dependency provenance OK: upstream source v1.24.3, C archive SHA-256 pinned.")
+print("ONNX Runtime dependency provenance OK: v1.24.3 pod archives pinned; ObjC SHA pending CI mirror verification.")

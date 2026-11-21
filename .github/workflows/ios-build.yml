@@ -26,6 +26,15 @@ jobs:
           persist-credentials: false
       - name: Show Xcode version
         run: xcodebuild -version
+      - name: Verify ONNX Runtime Objective-C archive mirror
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          url="https://onnxruntimepackages.z14.web.core.windows.net/pod-archive-onnxruntime-objc-1.24.3.zip"
+          curl --fail --location --retry 3 --retry-all-errors --connect-timeout 15 --max-time 300 "$url" -o build/onnxruntime-objc-1.24.3.zip
+          echo "ONNX Runtime Objective-C archive SHA256:"
+          shasum -a 256 build/onnxruntime-objc-1.24.3.zip
+          unzip -l build/onnxruntime-objc-1.24.3.zip | grep -E 'objectivec/include/onnxruntime.h|LICENSE'
       - name: Install CocoaPods dependencies
         run: |
           set -euo pipefail

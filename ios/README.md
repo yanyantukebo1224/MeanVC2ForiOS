@@ -6,7 +6,7 @@ published MeanVC2 120ms_40ms graph set.
 ## Active implementation
 
 - SwiftUI reference-audio picker and model status UI
-- ONNX Runtime 1.24.3: Objective-C wrapper sources pinned to Microsoft's `v1.24.3` tag; C/C++ XCFramework pinned to a SHA-256-verified GitHub release mirror
+- ONNX Runtime 1.24.3: C/C++ XCFramework pinned to a SHA-256-verified GitHub release mirror; Objective-C wrapper archive is being verified against the upstream Azure mirror
 - SHA-256-verified model downloader pinned to a fixed Hugging Face revision
 - Native Swift streaming host loop: fbank, Fast-U2++ ASR, BN interpolation,
   DiT flow-matching steps with per-layer KV caches, and Vocos waveform output

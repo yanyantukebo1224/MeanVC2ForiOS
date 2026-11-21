@@ -24,9 +24,11 @@ requirements.
 
 ## ONNX Runtime
 
-The Objective-C API source files are taken from Microsoft's
-[onnxruntime](https://github.com/microsoft/onnxruntime) tag `v1.24.3` and are
-distributed under the MIT License.
+The Objective-C API source archive is pinned to ONNX Runtime `v1.24.3` and
+uses the Azure storage fallback URL
+`https://onnxruntimepackages.z14.web.core.windows.net/pod-archive-onnxruntime-objc-1.24.3.zip`. Its podspec retains the upstream Microsoft MIT license. The
+archive's SHA-256 is being captured by CI before it is accepted as a reproducible
+dependency.
 
 The iOS C/C++ XCFramework is ONNX Runtime `v1.24.3`. Its transport mirror is
 the [`vendor-onnxruntime-c-1.24.3` release](https://github.com/baijum/ukulele-companion/releases/tag/vendor-onnxruntime-c-1.24.3)
