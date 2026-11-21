@@ -88,10 +88,11 @@ struct MeanVC2SmokeDiagnostics: Sendable {
             to: directory.appendingPathComponent(Self.successFileName),
             options: .atomic
         )
-        try write("PASS samples=\(samples.count)")
-        // Consume the CI-only marker after a successful end-to-end smoke run.
+        // Consume the CI-only marker before publishing PASS. The status file
+        // remains the final write observed by the workflow.
         try? FileManager.default.removeItem(
             at: directory.appendingPathComponent(Self.activationFileName)
         )
+        try write("PASS samples=\(samples.count)")
     }
 }
