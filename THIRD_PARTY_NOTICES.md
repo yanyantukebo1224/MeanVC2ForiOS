@@ -24,12 +24,13 @@ requirements.
 
 ## ONNX Runtime
 
-The Objective-C API sources are pinned to the upstream ONNX Runtime
-`rel-1.24.3` commit
-`3a728b75062256951b6e19ce718907cf1a1d4cf0`. CocoaPods obtains them from the
-GitHub codeload archive at that immutable commit URL, avoiding a Git clone in
-CI. The podspec retains Microsoft's upstream MIT license; CI verifies that the
-archive contains the expected public header and license and records its SHA-256.
+The Objective-C API sources are pinned to Microsoft's ONNX Runtime
+`v1.24.3` release tag, whose release build metadata identifies commit
+`3a728b75062256951b6e19ce718907cf1a1d4cf0`. CocoaPods obtains the source from
+the GitHub codeload tag archive, avoiding a Git clone in CI. The podspec retains
+Microsoft's upstream MIT license; CI verifies that the release tag resolves to
+the documented commit, checks the public header and license in the archive, and
+records its SHA-256.
 
 The iOS C/C++ XCFramework is ONNX Runtime `v1.24.3`. Its transport mirror is
 the [`vendor-onnxruntime-c-1.24.3` release](https://github.com/baijum/ukulele-companion/releases/tag/vendor-onnxruntime-c-1.24.3)

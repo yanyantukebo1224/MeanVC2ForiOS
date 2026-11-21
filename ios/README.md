@@ -6,7 +6,7 @@ published MeanVC2 120ms_40ms graph set.
 ## Active implementation
 
 - SwiftUI reference-audio picker and model status UI
-- ONNX Runtime 1.24.3: C/C++ XCFramework pinned to a SHA-256-verified GitHub release mirror; Objective-C wrapper sources pinned to Microsoft's immutable `rel-1.24.3` commit archive
+- ONNX Runtime 1.24.3: C/C++ XCFramework pinned to a SHA-256-verified GitHub release mirror; Objective-C wrapper sources pinned to Microsoft's `v1.24.3` release archive
 - SHA-256-verified model downloader pinned to a fixed Hugging Face revision
 - Native Swift streaming host loop: fbank, Fast-U2++ ASR, BN interpolation,
   DiT flow-matching steps with per-layer KV caches, and Vocos waveform output
@@ -35,9 +35,9 @@ model inference is offline.
 Install CocoaPods (if needed), then run `cd ios && pod install`. Open
 `ios/MeanVC2/MeanVC2.xcworkspace` in Xcode. Local podspecs avoid the broken
 `download.onnxruntime.ai` host and Git clone dependency: Objective-C sources
-come from a codeload archive pinned to upstream commit
-`3a728b75062256951b6e19ce718907cf1a1d4cf0`; the C/C++ XCFramework comes from
-a GitHub mirror with a pinned SHA-256. The bridging header imports the official
+come from the official `v1.24.3` tag archive (release commit
+`3a728b75062256951b6e19ce718907cf1a1d4cf0`); the C/C++ XCFramework comes
+from a GitHub mirror with a pinned SHA-256. The bridging header imports the official
 Objective-C API.
 
 ## Verification status
