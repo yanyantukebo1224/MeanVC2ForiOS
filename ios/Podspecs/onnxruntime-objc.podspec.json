@@ -12,7 +12,8 @@
     "ONNX Runtime": "onnxruntime@microsoft.com"
   },
   "source": {
-    "http": "https://onnxruntimepackages.z14.web.core.windows.net/pod-archive-onnxruntime-objc-1.24.3.zip"
+    "http": "https://codeload.github.com/microsoft/onnxruntime/zip/3a728b75062256951b6e19ce718907cf1a1d4cf0",
+    "flatten": true
   },
   "platforms": {
     "ios": "15.1",
