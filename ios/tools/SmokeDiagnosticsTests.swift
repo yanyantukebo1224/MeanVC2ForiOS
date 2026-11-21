@@ -36,6 +36,31 @@ struct SmokeDiagnosticsTests {
         )
         check(environmentDiagnostics != nil, "simulator-injected environment flag should enable diagnostics")
 
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let activationURL = root.appendingPathComponent(
+            MeanVC2SmokeDiagnostics.activationFileName
+        )
+        try Data("enabled".utf8).write(to: activationURL)
+        let fileDiagnostics = MeanVC2SmokeDiagnostics.current(
+            arguments: ["MeanVC2"],
+            environment: [:],
+            directory: root
+        )
+        check(fileDiagnostics != nil, "one-shot app-container marker should enable diagnostics")
+        if let fileDiagnostics {
+            try fileDiagnostics.writeOutput([0.125])
+        }
+        check(
+            !FileManager.default.fileExists(atPath: activationURL.path),
+            "successful smoke output should consume the one-shot activation marker"
+        )
+        check(
+            MeanVC2SmokeDiagnostics.current(
+                arguments: ["MeanVC2"], environment: [:], directory: root
+            ) == nil,
+            "consumed activation marker must not enable a later normal launch"
+        )
+
         for disabledValue in ["0", "true", ""] {
             check(
                 MeanVC2SmokeDiagnostics.current(

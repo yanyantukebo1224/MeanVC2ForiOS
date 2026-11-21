@@ -46,6 +46,8 @@ jobs:
           set -euo pipefail
           swiftc ios/MeanVC2/MeanVC2SmokeDiagnostics.swift ios/tools/SmokeDiagnosticsTests.swift -o build/SmokeDiagnosticsTests
           build/SmokeDiagnosticsTests
+      - name: Check Swift streaming profile against Python reference
+        run: python3 ios/tools/check_stream_profile.py
       - name: Download and verify ONNX smoke-test models
         run: |
           set -euo pipefail
@@ -74,7 +76,9 @@ jobs:
           cp build/MeanVC2Models/*.onnx "$MODEL_PATH/"
           STATUS_PATH="$DATA_PATH/Documents/onnx-pipeline-smoke-test.status"
           mkdir -p "$DATA_PATH/Documents"
-          rm -f "$STATUS_PATH" "$DATA_PATH/Documents/onnx-pipeline-smoke-test.ok" "$DATA_PATH/Documents/onnx-pipeline-smoke-output.f32"
+          ACTIVATION_PATH="$DATA_PATH/Documents/meanvc2-ci-smoke.enable"
+          rm -f "$STATUS_PATH" "$DATA_PATH/Documents/onnx-pipeline-smoke-test.ok" "$DATA_PATH/Documents/onnx-pipeline-smoke-output.f32" "$ACTIVATION_PATH"
+          touch "$ACTIVATION_PATH"
           echo "Simulator app container: $DATA_PATH"
           SIMULATOR_CONSOLE_LOG="build/simulator-console.log"
           SIMCTL_LAUNCH_PID=""
@@ -85,7 +89,7 @@ jobs:
             fi
           }
           trap cleanup_simulator_console EXIT
-          SIMCTL_CHILD_MEANVC2_CI_SMOKE=1 xcrun simctl launch --console --terminate-running-process "$UDID" jp.yanyantukebo.meanvc2 --meanvc2-ci-smoke >"$SIMULATOR_CONSOLE_LOG" 2>&1 &
+          xcrun simctl launch --console --terminate-running-process "$UDID" jp.yanyantukebo.meanvc2 >"$SIMULATOR_CONSOLE_LOG" 2>&1 &
           SIMCTL_LAUNCH_PID=$!
           APP_INIT_SEEN=0
           for attempt in $(seq 1 30); do
@@ -133,6 +137,7 @@ jobs:
           test -f "$DATA_PATH/Documents/onnx-pipeline-smoke-test.ok"
           test -f "$DATA_PATH/Documents/onnx-pipeline-smoke-output.f32"
           cp "$DATA_PATH/Documents/onnx-pipeline-smoke-output.f32" build/SwiftOutput.f32
+          test ! -e "$ACTIVATION_PATH"
       - name: Set up Python for ONNX parity
         uses: actions/setup-python@v5
         with:

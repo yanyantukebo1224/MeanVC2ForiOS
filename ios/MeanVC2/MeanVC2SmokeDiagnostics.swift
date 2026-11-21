@@ -9,6 +9,7 @@ struct MeanVC2SmokeDiagnostics: Sendable {
     static let statusFileName = "onnx-pipeline-smoke-test.status"
     static let successFileName = "onnx-pipeline-smoke-test.ok"
     static let outputFileName = "onnx-pipeline-smoke-output.f32"
+    static let activationFileName = "meanvc2-ci-smoke.enable"
 
     enum DiagnosticsError: Error {
         case emptyWaveform
@@ -33,13 +34,16 @@ struct MeanVC2SmokeDiagnostics: Sendable {
         let argumentEnabled = arguments.contains(launchArgument)
         let environmentEnabled = environment[environmentKey] == "1"
         let resolvedDirectory = directory ?? fallbackDirectory(homeDirectory: homeDirectory)
+        let activationURL = resolvedDirectory.appendingPathComponent(activationFileName)
+        let fileEnabled = FileManager.default.fileExists(atPath: activationURL.path)
         NSLog(
-            "[MeanVC2Smoke] bootstrap argument=%@ environment=%@ documents=%@",
+            "[MeanVC2Smoke] bootstrap argument=%@ environment=%@ marker=%@ documents=%@",
             argumentEnabled ? "1" : "0",
             environmentEnabled ? "1" : "0",
+            fileEnabled ? "1" : "0",
             resolvedDirectory.path
         )
-        guard argumentEnabled || environmentEnabled else {
+        guard argumentEnabled || environmentEnabled || fileEnabled else {
             return nil
         }
         return MeanVC2SmokeDiagnostics(directory: resolvedDirectory)
@@ -85,5 +89,9 @@ struct MeanVC2SmokeDiagnostics: Sendable {
             options: .atomic
         )
         try write("PASS samples=\(samples.count)")
+        // Consume the CI-only marker after a successful end-to-end smoke run.
+        try? FileManager.default.removeItem(
+            at: directory.appendingPathComponent(Self.activationFileName)
+        )
     }
 }

@@ -47,7 +47,8 @@ final class MeanVC2ONNXStream: @unchecked Sendable {
     private var randomState: UInt64 = UInt64.random(in: UInt64.min...UInt64.max)
     var noiseProvider: ((Int) -> [Float])?
 
-    init(modelDirectory: URL, threads: Int = 2, odeSteps: Int = 3) throws {
+    /// The default solver schedule matches runtime/run_rt.py's 120ms profile (N = 2).
+    init(modelDirectory: URL, threads: Int = 2, odeSteps: Int = 2) throws {
         self.odeSteps = max(1, odeSteps)
         var loaded: [String: ORTSession] = [:]
         for name in ["fbank", "asr", "gtm", "dit", "vocos"] {

@@ -12,9 +12,11 @@ published MeanVC2 120ms_40ms graph set.
   DiT flow-matching steps with per-layer KV caches, and Vocos waveform output
 - Optional WavLM-Large + ECAPA speaker encoder for reference-voice registration
 - AVFoundation audio-file decoding, mono downmix and 16 kHz resampling
-- CI-only iPhone Simulator smoke test, enabled by the explicit
-  `--meanvc2-ci-smoke` launch argument; normal app startup never runs a fake
-  zero-audio / zero-speaker conversion
+- CI-only iPhone Simulator smoke test, enabled by a one-shot marker file
+  created in the installed app's Documents directory; normal app startup never
+  runs synthetic zero-audio / zero-speaker conversion
+- DiT mean-flow defaults to two ODE steps, matching the Python reference
+  runtime's `N = 2` schedule for the 120ms_40ms profile
 
 ## Model profile
 
