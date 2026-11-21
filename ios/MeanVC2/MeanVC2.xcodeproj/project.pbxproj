@@ -6,7 +6,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A20000000000000000000001 /* onnxruntime in Frameworks */ = {isa = PBXBuildFile; productRef = F20000000000000000000002 /* onnxruntime */; };
 		A10000000000000000000001 /* MeanVC2App.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* MeanVC2App.swift */; };
 		A10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000002 /* ContentView.swift */; };
 		A10000000000000000000006 /* ONNXRuntimeEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000007 /* ONNXRuntimeEnvironment.swift */; };
@@ -31,16 +30,17 @@
 		B10000000000000000000012 /* MeanVC2LiveAudioController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeanVC2LiveAudioController.swift; sourceTree = "<group>"; };
 		B10000000000000000000013 /* MeanVC2AudioFrameBudget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeanVC2AudioFrameBudget.swift; sourceTree = "<group>"; };
 		B10000000000000000000014 /* MeanVC2SmokeDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeanVC2SmokeDiagnostics.swift; sourceTree = "<group>"; };
+		B10000000000000000000015 /* MeanVC2-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MeanVC2-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		C10000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (A20000000000000000000001 /* onnxruntime in Frameworks */,); runOnlyForDeploymentPostprocessing = 0; };
+		C10000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		D10000000000000000000001 = {
 			isa = PBXGroup;
-			children = (B10000000000000000000001 /* MeanVC2App.swift */, B10000000000000000000002 /* ContentView.swift */, B10000000000000000000007 /* ONNXRuntimeEnvironment.swift */, B10000000000000000000008 /* MeanVC2ModelStore.swift */, B10000000000000000000009 /* MeanVC2ONNXStream.swift */, B10000000000000000000010 /* MeanVC2SpeakerEncoder.swift */, B10000000000000000000011 /* MeanVC2AudioFile.swift */, B10000000000000000000013 /* MeanVC2AudioFrameBudget.swift */, B10000000000000000000014 /* MeanVC2SmokeDiagnostics.swift */, D10000000000000000000003 /* Products */,);
+			children = (B10000000000000000000001 /* MeanVC2App.swift */, B10000000000000000000002 /* ContentView.swift */, B10000000000000000000007 /* ONNXRuntimeEnvironment.swift */, B10000000000000000000008 /* MeanVC2ModelStore.swift */, B10000000000000000000009 /* MeanVC2ONNXStream.swift */, B10000000000000000000010 /* MeanVC2SpeakerEncoder.swift */, B10000000000000000000011 /* MeanVC2AudioFile.swift */, B10000000000000000000013 /* MeanVC2AudioFrameBudget.swift */, B10000000000000000000014 /* MeanVC2SmokeDiagnostics.swift */, B10000000000000000000015 /* MeanVC2-Bridging-Header.h */, D10000000000000000000003 /* Products */,);
 			sourceTree = "<group>";
 		};
 		D10000000000000000000003 /* Products */ = {
@@ -62,8 +62,7 @@
 			productName = MeanVC2;
 			productReference = B10000000000000000000003 /* MeanVC2.app */;
 			productType = "com.apple.product-type.application";
-			packageProductDependencies = (F20000000000000000000002 /* onnxruntime */,);
-		};
+			};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -80,7 +79,6 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (E10000000000000000000001 /* MeanVC2 */,);
-			packageReferences = (F20000000000000000000001 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */,);
 		};
 /* End PBXProject section */
 
@@ -95,8 +93,8 @@
 /* Begin XCBuildConfiguration section */
 		110000000000000000000001 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; }; name = Debug; };
 		110000000000000000000002 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; SWIFT_COMPILATION_MODE = wholemodule; SWIFT_OPTIMIZATION_LEVEL = "-O"; }; name = Release; };
-		110000000000000000000003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = MeanVC2; INFOPLIST_KEY_NSMicrophoneUsageDescription = "音声入力を音声変換するためにマイクを使用します。"; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = jp.yanyantukebo.meanvc2; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
-		110000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = MeanVC2; INFOPLIST_KEY_NSMicrophoneUsageDescription = "音声入力を音声変換するためにマイクを使用します。"; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = jp.yanyantukebo.meanvc2; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
+		110000000000000000000003 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = MeanVC2; INFOPLIST_KEY_NSMicrophoneUsageDescription = "音声入力を音声変換するためにマイクを使用します。"; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = jp.yanyantukebo.meanvc2; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/MeanVC2-Bridging-Header.h"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
+		110000000000000000000004 /* Release */ = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_KEY_CFBundleDisplayName = MeanVC2; INFOPLIST_KEY_NSMicrophoneUsageDescription = "音声入力を音声変換するためにマイクを使用します。"; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = jp.yanyantukebo.meanvc2; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/MeanVC2-Bridging-Header.h"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -105,13 +103,6 @@
 		F10000000000000000000003 /* Build configuration list for PBXProject "MeanVC2" */ = {isa = XCConfigurationList; buildConfigurations = (110000000000000000000001 /* Debug */, 110000000000000000000002 /* Release */,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		F20000000000000000000001 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */ = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/microsoft/onnxruntime-swift-package-manager.git"; requirement = {kind = upToNextMajorVersion; minimumVersion = 1.24.2; }; };
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		F20000000000000000000002 /* onnxruntime */ = {isa = XCSwiftPackageProductDependency; package = F20000000000000000000001 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */; productName = onnxruntime; };
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E10000000000000000000002 /* Project object */;
 }

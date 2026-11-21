@@ -1,5 +1,4 @@
 import Foundation
-import OnnxRuntimeBindings
 
 /// One-time reference-voice embedding extraction. The speaker graph is a
 /// separately licensed optional asset; see THIRD_PARTY_NOTICES.md.

@@ -6,7 +6,7 @@ published MeanVC2 120ms_40ms graph set.
 ## Active implementation
 
 - SwiftUI reference-audio picker and model status UI
-- ONNX Runtime through Microsoft's Swift Package Manager distribution
+- ONNX Runtime 1.24.3 through the official CocoaPods `onnxruntime-objc` package, exposed to Swift through a bridging header
 - SHA-256-verified model downloader pinned to a fixed Hugging Face revision
 - Native Swift streaming host loop: fbank, Fast-U2++ ASR, BN interpolation,
   DiT flow-matching steps with per-layer KV caches, and Vocos waveform output
@@ -32,17 +32,19 @@ model inference is offline.
 
 ## Build
 
-Open `MeanVC2/MeanVC2.xcodeproj` in Xcode. Xcode resolves the official
-`onnxruntime-swift-package-manager` package automatically.
+Install CocoaPods (if needed), then run `cd ios && pod install`. Open
+`ios/MeanVC2/MeanVC2.xcworkspace` in Xcode. The Podfile pins
+`onnxruntime-objc` to 1.24.3; the bridging header imports the official
+Objective-C API.
 
 ## Verification status
 
 - Earlier Vocos Core ML spectral export and native iSTFT parity: passed; retained
   as diagnostics, no longer the active runtime path
 - ONNX model checksums: pinned and checked before model files are accepted
-- Native Swift ONNX streaming implementation: integrated; Simulator build has
-  passed, but the streaming smoke test and Python numerical-parity check must
-  both pass before the graph path is considered verified
+- Native Swift ONNX streaming implementation: integrated; the earlier SPM-based
+  Simulator build passed, but the CocoaPods migration and current streaming
+  smoke test / Python numerical-parity check are not yet verified
 - Target speaker extraction: integrated; awaiting device-side verification
 - Live microphone capture, resampling and playback via AVAudioEngine: wired to
   the UI; stream caches reset on each start, input work is bounded, and the

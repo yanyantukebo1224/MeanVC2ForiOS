@@ -1,5 +1,4 @@
 import Foundation
-import OnnxRuntimeBindings
 
 /// Shared ONNX Runtime environment and session factory for the streaming
 /// MeanVC2 graphs. Model sessions are CPU-first; XNNPACK/CoreML providers

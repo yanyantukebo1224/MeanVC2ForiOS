@@ -20,19 +20,26 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 25
     steps:
-      # This job only reads its own repository. Do not persist the repo-scoped
-      # GITHUB_TOKEN into .git/config: SwiftPM also clones unrelated public repos.
+      # This job only reads its own repository; do not persist its scoped token.
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Show Xcode version
         run: xcodebuild -version
-      - name: Resolve Swift package dependencies
-        run: xcodebuild -resolvePackageDependencies -project ios/MeanVC2/MeanVC2.xcodeproj -scheme MeanVC2
+      - name: Install CocoaPods dependencies
+        run: |
+          set -euo pipefail
+          if ! command -v pod >/dev/null 2>&1; then
+            sudo gem install cocoapods --no-document
+          fi
+          pod --version
+          cd ios
+          pod install --repo-update
+          grep -F "onnxruntime-objc (1.24.3)" Podfile.lock
       - name: Build iOS Simulator app
         run: |
           xcodebuild \
-            -project ios/MeanVC2/MeanVC2.xcodeproj \
+            -workspace ios/MeanVC2/MeanVC2.xcworkspace \
             -scheme MeanVC2 \
             -configuration Debug \
             -sdk iphonesimulator \
@@ -147,7 +154,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install matching ONNX Runtime for reference parity
-        run: python -m pip install "numpy<2" onnxruntime==1.24.2
+        run: python -m pip install "numpy<2" onnxruntime==1.24.3
       - name: Check Swift streaming output against Python reference
         run: |
           set -euo pipefail

@@ -1,0 +1,5 @@
+.DS_Store
+build/
+ios/Pods/
+ios/MeanVC2/MeanVC2.xcworkspace/
+ios/MeanVC2/DerivedData/

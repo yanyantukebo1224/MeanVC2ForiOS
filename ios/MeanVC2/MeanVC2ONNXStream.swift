@@ -1,5 +1,4 @@
 import Foundation
-import OnnxRuntimeBindings
 
 enum MeanVC2ONNXError: Error {
     case modelMissing(String)
