@@ -34,9 +34,12 @@ assert objc_spec["source"] == {"http": expected_objc_url, "flatten": True}
 assert "v1.24.3" not in objc_spec["source"]["http"]
 
 workflow = (ROOT / ".github/workflows/ios-build.yml").read_text()
+notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text()
 assert f"commits/{expected_objc_ref}" in workflow
 assert f"refs/heads/{expected_objc_ref}" in workflow
 assert expected_objc_commit in workflow
+assert f"`{expected_objc_ref}` release branch" in notices
+assert "release tag resolves" not in notices
 assert objc_spec["subspecs"][0]["dependencies"]["onnxruntime-c"] == ["1.24.3"]
 
 assert "Podspecs/onnxruntime-c.podspec.json" in podfile
