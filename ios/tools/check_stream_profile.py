@@ -116,10 +116,16 @@ equal(
     config["block_size"],
 )
 equal("DiT layer count", swift_constant("layerCount"), config["depth"])
+ode_steps = integer(r"odeSteps: Int = (\d+)", swift, "Swift default ODE steps")
 equal(
     "mean-flow ODE steps",
-    integer(r"odeSteps: Int = (\d+)", swift, "Swift default ODE steps"),
+    ode_steps,
     integer(r"\bN\s*=\s*(\d+)\s*#\s*ODE steps", reference, "Python ODE steps"),
+)
+equal(
+    "Python parity ODE steps",
+    integer(r"\bsteps\s*=\s*(\d+)", parity, "Python parity ODE steps"),
+    ode_steps,
 )
 equal(
     "vocoder overlap frames",
