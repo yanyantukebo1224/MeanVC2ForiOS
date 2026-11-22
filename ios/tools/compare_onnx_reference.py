@@ -23,7 +23,7 @@ def main() -> int:
         args.model_dir,
         suffix={"asr": ".int8", "dit": ".int8", "vocos": ".int8"},
         threads=2,
-        steps=3,
+        steps=2,
     )
     runner.noise_fn = lambda n: np.zeros((1, n, 80), dtype=np.float32)
     runner.set_target(np.zeros((1, 256), dtype=np.float32))
