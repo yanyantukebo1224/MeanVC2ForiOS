@@ -19,6 +19,7 @@ def integer(pattern: str, text: str, label: str) -> int:
 
 swift = (ROOT / "ios/MeanVC2/MeanVC2ONNXStream.swift").read_text()
 reference = (ROOT / "runtime/run_rt.py").read_text()
+parity = (ROOT / "ios/tools/compare_onnx_reference.py").read_text()
 config = json.loads((ROOT / "src/config/config_120ms_40ms.json").read_text())["model"]
 
 profile_match = re.search(
