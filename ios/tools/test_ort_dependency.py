@@ -53,8 +53,9 @@ class DependencyProvenanceTests(unittest.TestCase):
             encoding="utf-8",
         )
         (self.root / "THIRD_PARTY_NOTICES.md").write_text(
-            "commit " + checker.EXPECTED_OBJC_COMMIT + "\n", encoding="utf-8"
-        )
+            "The Objective-C API sources are pinned to the immutable ONNX Runtime commit\n"
+            + "`" + checker.EXPECTED_OBJC_COMMIT + "` in the Microsoft repository.\n",
+            encoding="utf-8"        )
 
     def tearDown(self) -> None:
         self.temp.cleanup()
