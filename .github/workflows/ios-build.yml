@@ -27,8 +27,7 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
       - name: Check pinned ONNX Runtime dependency provenance
-        run: python3 ios/tools/check_ort_dependency.py
-          python3 ios/tools/test_ort_dependency.py
+        run: python3 ios/tools/check_ort_dependency.py && python3 ios/tools/test_ort_dependency.py
       - name: Verify ONNX Runtime Objective-C source archive
         run: |
           set -euo pipefail
