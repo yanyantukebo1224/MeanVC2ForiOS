@@ -64,7 +64,7 @@ def validate(root: Path) -> None:
             "CI archive verification URL differs from the podspec")
     require("refs/heads/" not in workflow and "refs/tags/" not in workflow,
             "CI must not download a mutable branch or tag archive")
-    require("commit " + EXPECTED_OBJC_COMMIT in notices,
+    require(EXPECTED_OBJC_COMMIT in notices,
             "Third-party notices must document the exact Objective-C source commit")
 
     print(
