@@ -35,6 +35,9 @@ jobs:
       - name: Validate model asset manifest
         run: python3 ios/tools/check_model_manifest.py
 
+      - name: Test streaming profile parser regression
+        run: python3 ios/tools/test_stream_profile.py
+
       - name: Validate Swift/Python streaming profile parity
         run: python3 ios/tools/check_stream_profile.py
 
