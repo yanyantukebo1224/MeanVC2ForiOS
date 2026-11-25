@@ -25,11 +25,13 @@ requirements.
 ## ONNX Runtime
 
 The Objective-C API sources are pinned to the immutable ONNX Runtime commit
-`3a728b75062256951b6e19ce718907cf1a1d4cf0` in Microsoft's repository. CocoaPods downloads the codeload
-archive by full commit SHA rather than a mutable tag or branch. The podspec
-retains Microsoft's upstream MIT license. CI verifies that the commit exists,
-uses the exact same archive URL as the podspec, and checks that the archive
-contains the public Objective-C header and upstream license.
+`3a728b75062256951b6e19ce718907cf1a1d4cf0` in Microsoft's repository. CocoaPods
+downloads the codeload archive by full commit SHA rather than a mutable tag or
+branch. The podspec retains Microsoft's upstream MIT license. CI downloads the
+same immutable URL directly, validates ZIP integrity, and checks for the public
+Objective-C header and upstream license. It deliberately avoids a separate
+GitHub REST API lookup because hosted-runner API 403/rate-limit responses had
+blocked the build before the archive could be tested.
 
 The iOS C/C++ XCFramework is ONNX Runtime `v1.24.3`. Its transport mirror is
 the [`vendor-onnxruntime-c-1.24.3` release](https://github.com/baijum/ukulele-companion/releases/tag/vendor-onnxruntime-c-1.24.3)
@@ -40,13 +42,6 @@ publishes SHA-256
 The local CocoaPods specification pins that GitHub asset and digest; TLS
 verification is not disabled. The mirror release identifies the binary under
 the MIT License, and the archive's upstream license file is preserved.
-
-The Objective-C wrapper pod downloads the Microsoft source archive using the
-full immutable commit SHA in its URL. CI downloads that same URL directly,
-checks ZIP integrity, and verifies the public Objective-C header and upstream
-license are present. CI intentionally does not call the GitHub REST API for a
-second commit lookup: a hosted-runner API 403/rate-limit response previously
-blocked the build before the pinned archive itself could be tested.
 
 ## Responsible use
 

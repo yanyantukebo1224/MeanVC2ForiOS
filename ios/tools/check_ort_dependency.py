@@ -59,7 +59,7 @@ def validate(root: Path) -> None:
             "Podfile still references the unavailable download host")
 
     require(EXPECTED_OBJC_URL in workflow,
-            "CI archive verification URL differs from the podspec")
+            "CI must retain the immutable Objective-C source commit in the archive URL")
     require("api.github.com/repos/microsoft/onnxruntime/commits/" not in workflow,
             "CI must not depend on the GitHub REST API to verify an already pinned commit URL")
     require("unzip -tq build/onnxruntime-objc-source.zip" in workflow,
