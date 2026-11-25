@@ -41,6 +41,13 @@ The local CocoaPods specification pins that GitHub asset and digest; TLS
 verification is not disabled. The mirror release identifies the binary under
 the MIT License, and the archive's upstream license file is preserved.
 
+The Objective-C wrapper pod downloads the Microsoft source archive using the
+full immutable commit SHA in its URL. CI downloads that same URL directly,
+checks ZIP integrity, and verifies the public Objective-C header and upstream
+license are present. CI intentionally does not call the GitHub REST API for a
+second commit lookup: a hosted-runner API 403/rate-limit response previously
+blocked the build before the pinned archive itself could be tested.
+
 ## Responsible use
 
 Only register reference voices when you have the speaker's permission. Do not

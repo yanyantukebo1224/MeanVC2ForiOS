@@ -45,11 +45,11 @@ class DependencyProvenanceTests(unittest.TestCase):
             encoding="utf-8",
         )
         (self.root / ".github/workflows/ios-build.yml").write_text(
-            "https://api.github.com/repos/microsoft/onnxruntime/commits/"
-            + checker.EXPECTED_OBJC_COMMIT
-            + "\n"
-            + checker.EXPECTED_OBJC_URL
-            + "\n",
+            'url="' + checker.EXPECTED_OBJC_URL + '"\n'
+            'curl --fail --location "$url" -o build/onnxruntime-objc-source.zip\n'
+            'unzip -tq build/onnxruntime-objc-source.zip\n'
+            "grep objectivec/include/onnxruntime.h\n"
+            "grep /LICENSE\n",
             encoding="utf-8",
         )
         (self.root / "THIRD_PARTY_NOTICES.md").write_text(
@@ -84,6 +84,18 @@ class DependencyProvenanceTests(unittest.TestCase):
             encoding="utf-8",
         )
         with self.assertRaisesRegex(ValueError, "immutable Objective-C source commit"):
+            checker.validate(self.root)
+
+    def test_rejects_github_api_preflight(self) -> None:
+        path = self.root / ".github/workflows/ios-build.yml"
+        path.write_text(
+            path.read_text(encoding="utf-8")
+            + "curl https://api.github.com/repos/microsoft/onnxruntime/commits/"
+            + checker.EXPECTED_OBJC_COMMIT
+            + "\\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValueError, "must not depend on the GitHub REST API"):
             checker.validate(self.root)
 
     def test_rejects_unpinned_c_archive(self) -> None:
