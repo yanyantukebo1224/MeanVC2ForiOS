@@ -38,6 +38,9 @@ jobs:
       - name: Test streaming profile parser regression
         run: python3 ios/tools/test_stream_profile.py
 
+      - name: Test deterministic non-degenerate CI fixture
+        run: python3 ios/tools/test_meanvc2_ci_fixture.py
+
       - name: Validate Swift/Python streaming profile parity
         run: python3 ios/tools/check_stream_profile.py
 

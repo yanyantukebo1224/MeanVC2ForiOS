@@ -13,8 +13,9 @@ published MeanVC2 120ms_40ms graph set.
 - Optional WavLM-Large + ECAPA speaker encoder for reference-voice registration
 - AVFoundation audio-file decoding, mono downmix and 16 kHz resampling
 - CI-only iPhone Simulator smoke test, enabled by a one-shot marker file
-  created in the installed app's Documents directory; normal app startup never
-  runs synthetic zero-audio / zero-speaker conversion
+  created in the installed app's Documents directory; it uses a deterministic
+  non-zero non-speech fixture, synthetic normalized speaker conditioning, and
+  non-zero diffusion noise (not a perceptual or real-speaker quality test)
 - DiT mean-flow defaults to two ODE steps, matching the Python reference
   runtime's `N = 2` schedule for the 120ms_40ms profile
 

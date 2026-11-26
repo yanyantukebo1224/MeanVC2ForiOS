@@ -206,19 +206,22 @@ struct ContentView: View {
                 let runner = try MeanVC2ONNXStream(modelDirectory: directory)
                 var output: [Float] = []
 
-                // Synthetic zero audio and a zero speaker vector are strictly
-                // a deterministic CI graph-execution fixture, never a user mode.
+                // Deterministic non-speech input, speaker-conditioning, and
+                // diffusion-noise fixtures exercise a non-degenerate graph path.
+                // This is CI-only and never substitutes for a user's reference voice.
                 if isCISmokeTest {
                     try smokeDiagnostics?.write("sessions-ready")
                     runner.noiseProvider = { frameCount in
-                        [Float](repeating: 0, count: frameCount * 80)
+                        MeanVC2CISmokeFixture.noise(frameCount: frameCount)
                     }
-                    try runner.setTargetEmbedding([Float](repeating: 0, count: 256))
+                    try runner.setTargetEmbedding(
+                        MeanVC2CISmokeFixture.speakerEmbedding()
+                    )
                     try smokeDiagnostics?.write("conditioning-ready")
-                    for index in 0..<8 {
+                    for index in 0..<MeanVC2CISmokeFixture.chunkCount {
                         try smokeDiagnostics?.write("processing-chunk=\(index + 1)")
                         output.append(contentsOf: try runner.process(
-                            [Float](repeating: 0, count: 2_560)
+                            MeanVC2CISmokeFixture.waveformChunk(index: index)
                         ))
                     }
                     guard !output.isEmpty, output.allSatisfy(\.isFinite) else {

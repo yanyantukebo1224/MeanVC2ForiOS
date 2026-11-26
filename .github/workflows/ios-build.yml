@@ -76,6 +76,13 @@ jobs:
           set -euo pipefail
           swiftc ios/MeanVC2/MeanVC2SmokeDiagnostics.swift ios/tools/SmokeDiagnosticsTests.swift -o build/SmokeDiagnosticsTests
           build/SmokeDiagnosticsTests
+      - name: Test deterministic non-degenerate Simulator fixture
+        run: |
+          set -euo pipefail
+          mkdir -p build/MeanVC2CISmokeFixture
+          swiftc ios/MeanVC2/MeanVC2CISmokeFixture.swift ios/tools/SmokeFixtureTests.swift -o build/SmokeFixtureTests
+          build/SmokeFixtureTests build/MeanVC2CISmokeFixture
+          python3 ios/tools/test_meanvc2_ci_fixture.py --swift-fixture-dir build/MeanVC2CISmokeFixture
       - name: Check Swift streaming profile against Python reference
         run: python3 ios/tools/check_stream_profile.py
       - name: Download and verify ONNX smoke-test models

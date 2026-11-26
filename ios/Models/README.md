@@ -45,11 +45,13 @@ inference does not require a network connection.
 
 The Swift implementation is intended to match the pinned ONNX reference
 runtime. CI launches the app with the explicit `--meanvc2-ci-smoke` argument
-and feeds synthetic zero audio plus a zero speaker vector to exercise the graph
-chain before comparing samples with the Python ONNX reference. Normal app
-startup does not run this synthetic conversion. The CI fixture is a
-deterministic execution/parity test only: it does not measure perceptual voice
-quality, speaker similarity, or live microphone latency.
+and feeds eight chunks of a deterministic non-zero, non-speech waveform, a
+normalized synthetic 256-dimensional conditioning vector, and deterministic
+non-zero diffusion noise. Swift and Python fixture bytes are checked for exact
+Float32 parity before the simulator output is compared with the Python ONNX
+reference. Normal app startup never runs this fixture. It exercises the
+non-degenerate graph and cache path, but it does not validate real speech,
+speaker-encoder quality, perceptual similarity, or live microphone latency.
 
 ## Core ML export status
 

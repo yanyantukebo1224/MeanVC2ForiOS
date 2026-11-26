@@ -8,6 +8,13 @@ from pathlib import Path
 
 import numpy as np
 
+from meanvc2_ci_fixture import (
+    CHUNK_COUNT,
+    noise_values,
+    speaker_embedding,
+    waveform_chunk,
+)
+
 
 def main() -> int:
     parser = argparse.ArgumentParser()
@@ -25,12 +32,17 @@ def main() -> int:
         threads=2,
         steps=2,
     )
-    runner.noise_fn = lambda n: np.zeros((1, n, 80), dtype=np.float32)
-    runner.set_target(np.zeros((1, 256), dtype=np.float32))
+    runner.noise_fn = lambda n: np.asarray(
+        noise_values(n), dtype=np.float32
+    ).reshape(1, n, 80)
+    runner.set_target(
+        np.asarray(speaker_embedding(), dtype=np.float32).reshape(1, 256)
+    )
 
     pieces = []
-    for _ in range(8):
-        pieces.append(runner.process(np.zeros(2560, dtype=np.float32)))
+    for index in range(CHUNK_COUNT):
+        chunk = np.asarray(waveform_chunk(index), dtype=np.float32)
+        pieces.append(runner.process(chunk))
     expected = np.concatenate(pieces).astype(np.float32, copy=False)
     actual = np.fromfile(args.swift_output, dtype=np.float32)
 
@@ -40,12 +52,21 @@ def main() -> int:
     if expected.size == 0:
         print("reference produced no waveform")
         return 1
+    if not np.isfinite(expected).all() or not np.isfinite(actual).all():
+        print("non-finite samples found in Swift or reference output")
+        return 1
+    if not np.any(expected != 0) or not np.any(actual != 0):
+        print("degenerate all-zero output: non-zero CI fixture did not exercise synthesis")
+        return 1
 
     delta = np.abs(actual.astype(np.float64) - expected.astype(np.float64))
     max_abs = float(delta.max())
     mean_abs = float(delta.mean())
     denom = np.linalg.norm(actual) * np.linalg.norm(expected)
-    cosine = float(np.dot(actual, expected) / denom) if denom else 1.0
+    if denom == 0:
+        print("cannot compute cosine similarity for zero-energy output")
+        return 1
+    cosine = float(np.dot(actual, expected) / denom)
     print(
         f"Swift/Python ONNX parity: samples={actual.size}, "
         f"max_abs={max_abs:.8g}, mean_abs={mean_abs:.8g}, cosine={cosine:.9f}"
