@@ -91,6 +91,11 @@ jobs:
           set -euo pipefail
           swiftc ios/MeanVC2/MeanVC2SpeakerEmbeddingValidator.swift ios/tools/SpeakerEmbeddingValidatorTests.swift -o build/SpeakerEmbeddingValidatorTests
           build/SpeakerEmbeddingValidatorTests
+      - name: Test microphone input discontinuity recovery
+        run: |
+          set -euo pipefail
+          swiftc ios/MeanVC2/MeanVC2InputDiscontinuity.swift ios/tools/InputDiscontinuityTests.swift -o build/InputDiscontinuityTests
+          build/InputDiscontinuityTests
       - name: Check Swift streaming profile against Python reference
         run: python3 ios/tools/check_stream_profile.py
       - name: Download and verify ONNX smoke-test models
