@@ -45,6 +45,9 @@ jobs:
       - name: Test deterministic non-degenerate CI fixture
         run: python3 ios/tools/test_meanvc2_ci_fixture.py
 
+      - name: Check speaker embedding validation integration
+        run: python3 ios/tools/check_speaker_embedding_validation.py
+
       - name: Validate Swift/Python streaming profile parity
         run: python3 ios/tools/check_stream_profile.py
 
