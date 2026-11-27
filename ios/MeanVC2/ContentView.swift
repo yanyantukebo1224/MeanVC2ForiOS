@@ -159,7 +159,7 @@ struct ContentView: View {
             }
             Button("あとで", role: .cancel) { }
         } message: {
-            Text("初回のみ約387MBの話者モデルをダウンロードします。3秒以上のはっきりした音声を使い、本人の許可を得た音声だけを登録してください。")
+            Text("初回のみ約387MBの話者モデルをダウンロードします。3〜20秒のはっきりした音声を使い、本人の許可を得た音声だけを登録してください。")
         }
         .task {
             await prepareConversionEngine()
