@@ -19,7 +19,7 @@ permissions:
 jobs:
   build:
     runs-on: macos-15
-    timeout-minutes: 25
+    timeout-minutes: 60
     steps:
       # This job only reads its own repository; do not persist its scoped token.
       - uses: actions/checkout@v4
@@ -30,6 +30,7 @@ jobs:
       - name: Check pinned ONNX Runtime dependency provenance
         run: python3 ios/tools/check_ort_dependency.py && python3 ios/tools/test_ort_dependency.py
       - name: Verify ONNX Runtime Objective-C source archive
+        timeout-minutes: 10
         run: |
           set -euo pipefail
           mkdir -p build
@@ -45,6 +46,7 @@ jobs:
           unzip -l build/onnxruntime-objc-source.zip | grep -E 'objectivec/include/onnxruntime.h$'
           unzip -l build/onnxruntime-objc-source.zip | grep -E '/LICENSE$'
       - name: Install CocoaPods dependencies
+        timeout-minutes: 15
         run: |
           set -euo pipefail
           if ! command -v pod >/dev/null 2>&1; then
@@ -56,6 +58,7 @@ jobs:
           grep -F "onnxruntime-c (1.24.3)" Podfile.lock
           grep -E "onnxruntime-objc(/Core)? \\(1\\.24\\.3\\)" Podfile.lock
       - name: Build iOS Simulator app
+        timeout-minutes: 20
         run: |
           xcodebuild \
             -workspace ios/MeanVC2/MeanVC2.xcworkspace \
@@ -86,18 +89,20 @@ jobs:
       - name: Check Swift streaming profile against Python reference
         run: python3 ios/tools/check_stream_profile.py
       - name: Download and verify ONNX smoke-test models
+        timeout-minutes: 12
         run: |
           set -euo pipefail
           mkdir -p build/MeanVC2Models
           base="https://huggingface.co/kiarina/MeanVC2-ONNX/resolve/2db97430c6e315a819daa30e255e14615205a3d1"
-          curl -L --fail --retry 3 "$base/fbank.onnx?download=true" -o build/MeanVC2Models/fbank.onnx
-          curl -L --fail --retry 3 "$base/asr.int8.onnx?download=true" -o build/MeanVC2Models/asr.int8.onnx
-          curl -L --fail --retry 3 "$base/gtm.onnx?download=true" -o build/MeanVC2Models/gtm.onnx
-          curl -L --fail --retry 3 "$base/dit.int8.onnx?download=true" -o build/MeanVC2Models/dit.int8.onnx
-          curl -L --fail --retry 3 "$base/vocos.int8.onnx?download=true" -o build/MeanVC2Models/vocos.int8.onnx
+          curl --silent --show-error --location --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 600 "$base/fbank.onnx?download=true" -o build/MeanVC2Models/fbank.onnx
+          curl --silent --show-error --location --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 600 "$base/asr.int8.onnx?download=true" -o build/MeanVC2Models/asr.int8.onnx
+          curl --silent --show-error --location --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 600 "$base/gtm.onnx?download=true" -o build/MeanVC2Models/gtm.onnx
+          curl --silent --show-error --location --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 600 "$base/dit.int8.onnx?download=true" -o build/MeanVC2Models/dit.int8.onnx
+          curl --silent --show-error --location --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 600 "$base/vocos.int8.onnx?download=true" -o build/MeanVC2Models/vocos.int8.onnx
       - name: Verify ONNX model manifest and downloaded assets
         run: python3 ios/tools/check_model_manifest.py --verify-files build/MeanVC2Models
       - name: Run ONNX streaming inference smoke test in iPhone Simulator
+        timeout-minutes: 20
         run: |
           set -euo pipefail
           UDID="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; data=json.load(sys.stdin); devices=[d for group in data["devices"].values() for d in group if d.get("isAvailable") and d["name"].startswith("iPhone")]; print(devices[0]["udid"] if devices else "")')"
@@ -180,8 +185,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install matching ONNX Runtime for reference parity
+        timeout-minutes: 10
         run: python -m pip install "numpy<2" onnxruntime==1.24.3
       - name: Check Swift streaming output against Python reference
+        timeout-minutes: 15
         run: |
           set -euo pipefail
           git clone https://github.com/kiarina/meanvc2_onnx.git /tmp/meanvc2-onnx
