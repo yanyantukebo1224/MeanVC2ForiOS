@@ -54,6 +54,9 @@ Objective-C API.
 - Live microphone capture, resampling and playback via AVAudioEngine: wired to
   the UI; stream caches reset on each start, input work is bounded, and the
   scheduled playback queue is capped at 600 ms
+- If an input tap buffer must be dropped under overload, the next accepted
+  buffer marks a discontinuity: partial input is discarded, ASR/DiT/Vocos
+  caches reset, and pre-gap scheduled playback is flushed
 - Audio interruption and route-change notifications: automatic restart is
   implemented when iOS indicates resumption is allowed; not yet device-tested
 - Audio interruption / route-change recovery, queue-drop behavior, sustained
