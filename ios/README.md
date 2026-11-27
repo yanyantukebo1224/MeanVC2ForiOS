@@ -32,6 +32,18 @@ including the GTM graph). The optional speaker encoder is downloaded only when
 a reference voice is registered (roughly 387 MB). After these assets are present,
 model inference is offline.
 
+## Quantization and quality status
+
+The active pack uses FP32 fbank/GTM graphs and INT8 ASR, DiT and Vocos graphs;
+the optional WavLM-Large + ECAPA speaker graph is also INT8. This is the
+memory-oriented export variant, not a claim of parity with the FP32 model.
+The exporter maintainer reports about 5.7 dB log-spectral distance for the
+INT8 conversion graphs in its own comparison and notes that INT8 output can
+vary with ONNX Runtime versions. This app pins ONNX Runtime 1.24.3; the
+exporter's published INT8 listening result is not a device-quality guarantee.
+No perceptual-quality or speaker-similarity claim is made until real speech
+has been tested on the target iPhone against the pinned Python reference.
+
 ## Build
 
 Install CocoaPods (if needed), then run `cd ios && pod install`. Open
