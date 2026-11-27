@@ -8,7 +8,7 @@ struct SpeakerEmbeddingValidatorTests {
         func check(_ condition: @autoclosure () -> Bool, _ message: String) {
             assertions += 1
             guard condition() else {
-                fatalError("Speaker embedding validator test failed: \\(message)")
+                fatalError("Speaker embedding validator test failed: \(message)")
             }
         }
 
@@ -58,6 +58,6 @@ struct SpeakerEmbeddingValidatorTests {
             "negligible-energy vector should be rejected"
         )
 
-        print("Speaker embedding validator tests passed (\\(assertions) assertions)")
+        print("Speaker embedding validator tests passed (\(assertions) assertions)")
     }
 }
