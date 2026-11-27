@@ -29,8 +29,10 @@ final class MeanVC2SpeakerEncoder {
             throw MeanVC2ONNXError.invalidTensor("Speaker embedding output is missing")
         }
         let vector = try ORTTensor.readFloat(value)
-        guard vector.count == 256 else {
-            throw MeanVC2ONNXError.invalidTensor("Speaker embedding must contain 256 values")
+        if let validationError = MeanVC2SpeakerEmbeddingValidator.validationError(for: vector) {
+            throw MeanVC2ONNXError.invalidTensor(
+                "Speaker model returned an invalid embedding: \\(validationError)"
+            )
         }
         return vector
     }
