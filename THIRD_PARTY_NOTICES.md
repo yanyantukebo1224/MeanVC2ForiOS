@@ -48,3 +48,33 @@ the MIT License, and the archive's upstream license file is preserved.
 Only register reference voices when you have the speaker's permission. Do not
 use voice conversion to impersonate someone or mislead listeners about who is
 speaking.
+
+## Upstream revisions and component attribution
+
+The pinned ONNX export's own [NOTICE](https://huggingface.co/kiarina/MeanVC2-ONNX/blob/2db97430c6e315a819daa30e255e14615205a3d1/NOTICE)
+records the following provenance:
+
+- MeanVC2 source code: commit
+  `13acf84c1bf135ea5edad9c245b345289b06b33e`; its README states Apache-2.0.
+- MeanVC2 model weights: Hugging Face revision
+  `39cdd19522fe896c227da691314d9a0e3b995486`, Apache-2.0.
+- WavLM base weights: `s3prl/converted_ckpts` revision
+  `8cad0b370e7e35f8d56951d95d2be036ea85510c`; WavLM is MIT.
+- s3prl model code: commit
+  `ec8064b5889f81ca460fbe2c094ce576a6f120b7`, Apache-2.0.
+- The fbank export incorporates Kaldi-compatible mel filter values from
+  torchaudio, BSD-2-Clause.
+- Vocos is Copyright (c) 2023 Charactr Inc., MIT.
+- Fast-U2++ uses the WeNet architecture, Apache-2.0.
+- The DiT backbone is based on F5-TTS; retain its upstream attribution and
+  license notice when redistributing derived components.
+
+The export changes the model format and quantizes MatMul/Gemm weights in the
+`*.int8.onnx` files; it does not retrain the models. Each exported component
+retains the license of its source. The optional speaker encoder remains
+CC BY-SA 3.0, including the modified INT8 ONNX file; it must not be represented
+as Apache-2.0.
+
+The iOS app downloads these assets from the pinned export revision at runtime.
+Their exact byte counts and SHA-256 digests are maintained in
+`MeanVC2ModelStore.swift` and checked by `check_model_manifest.py`.
