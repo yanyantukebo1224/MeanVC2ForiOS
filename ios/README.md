@@ -30,7 +30,7 @@ after the initial streaming context has accumulated. This is not the earlier
 The conversion graphs are downloaded on first launch (roughly 74 MB total,
 including the GTM graph). The optional speaker encoder is downloaded only when
 a reference voice is registered (roughly 387 MB). After these assets are present,
-model inference is offline.
+model inference is offline. Reference recordings are limited to 3–20 seconds; source duration is checked from file metadata before decoding to bound transient audio memory and match the exporter's published speaker-encoder validation range.
 
 ## Quantization and quality status
 
