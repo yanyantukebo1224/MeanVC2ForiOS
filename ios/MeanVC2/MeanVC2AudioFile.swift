@@ -11,7 +11,7 @@ enum MeanVC2AudioFileError: Error, LocalizedError {
         case .unsupportedAudio:
             return "この音声ファイル形式には対応していません"
         case .conversionFailed(let message):
-            return "音声の変換に失敗しました: \\(message)"
+            return "音声の変換に失敗しました: \(message)"
         case .referenceDurationOutOfRange(let message):
             return message
         }
