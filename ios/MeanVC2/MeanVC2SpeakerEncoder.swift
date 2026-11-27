@@ -31,7 +31,7 @@ final class MeanVC2SpeakerEncoder {
         let vector = try ORTTensor.readFloat(value)
         if let validationError = MeanVC2SpeakerEmbeddingValidator.validationError(for: vector) {
             throw MeanVC2ONNXError.invalidTensor(
-                "Speaker model returned an invalid embedding: \\(validationError)"
+                "Speaker model returned an invalid embedding: \(validationError)"
             )
         }
         return vector
