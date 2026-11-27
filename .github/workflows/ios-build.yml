@@ -96,6 +96,11 @@ jobs:
           set -euo pipefail
           swiftc ios/MeanVC2/MeanVC2InputDiscontinuity.swift ios/tools/InputDiscontinuityTests.swift -o build/InputDiscontinuityTests
           build/InputDiscontinuityTests
+      - name: Test reference audio duration policy
+        run: |
+          set -euo pipefail
+          swiftc ios/MeanVC2/MeanVC2ReferenceAudioPolicy.swift ios/tools/ReferenceAudioPolicyTests.swift -o build/ReferenceAudioPolicyTests
+          build/ReferenceAudioPolicyTests
       - name: Check Swift streaming profile against Python reference
         run: python3 ios/tools/check_stream_profile.py
       - name: Download and verify ONNX smoke-test models
