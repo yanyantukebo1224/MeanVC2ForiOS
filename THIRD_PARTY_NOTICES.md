@@ -66,8 +66,10 @@ records the following provenance:
   torchaudio, BSD-2-Clause.
 - Vocos is Copyright (c) 2023 Charactr Inc., MIT.
 - Fast-U2++ uses the WeNet architecture, Apache-2.0.
-- The DiT backbone is based on F5-TTS; retain its upstream attribution and
-  license notice when redistributing derived components.
+- The DiT backbone references F5-TTS architecture/code, whose upstream code
+  is MIT-licensed. F5-TTS separately distributes pretrained checkpoints under
+  CC-BY-NC; those checkpoints are not part of this app. The active graph uses
+  the MeanVC2 weights listed above, not an F5-TTS pretrained checkpoint.
 
 The export changes the model format and quantizes MatMul/Gemm weights in the
 `*.int8.onnx` files; it does not retrain the models. Each exported component
