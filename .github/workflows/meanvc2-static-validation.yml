@@ -48,6 +48,9 @@ jobs:
       - name: Check speaker embedding validation integration
         run: python3 ios/tools/check_speaker_embedding_validation.py
 
+      - name: Check audio discontinuity recovery integration
+        run: python3 ios/tools/check_audio_discontinuity.py
+
       - name: Validate Swift/Python streaming profile parity
         run: python3 ios/tools/check_stream_profile.py
 
