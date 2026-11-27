@@ -9,7 +9,7 @@ struct InputDiscontinuityTests {
         func check(_ condition: @autoclosure () -> Bool, _ message: String) {
             assertions += 1
             guard condition() else {
-                fatalError("Input discontinuity test failed: \\(message)")
+                fatalError("Input discontinuity test failed: \(message)")
             }
         }
 
@@ -35,6 +35,6 @@ struct InputDiscontinuityTests {
         check(state.consumePendingGap(), "concurrent drops must not lose the gap")
         check(!state.consumePendingGap(), "concurrent gap must be consumed once")
 
-        print("Input discontinuity tests passed (\\(assertions) assertions)")
+        print("Input discontinuity tests passed (\(assertions) assertions)")
     }
 }
