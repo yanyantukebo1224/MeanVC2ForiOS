@@ -78,8 +78,8 @@ final class MeanVC2ONNXStream: @unchecked Sendable {
 
     /// Sets the 256-dimensional target-speaker embedding and clears stream state.
     func setTargetEmbedding(_ embedding: [Float]) throws {
-        guard embedding.count == 256 else {
-            throw MeanVC2ONNXError.invalidTensor("speaker embedding must contain 256 values")
+        if let validationError = MeanVC2SpeakerEmbeddingValidator.validationError(for: embedding) {
+            throw MeanVC2ONNXError.invalidTensor(validationError)
         }
         speaker = try ORTTensor.float(embedding, shape: [1, 256])
         let result = try run("gtm", inputs: ["spks": speaker!], outputs: ["k_mem", "v_mem"])
