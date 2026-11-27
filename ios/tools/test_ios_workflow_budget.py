@@ -22,12 +22,28 @@ def main() -> int:
         f"macOS integration job budget is only {job.group(1)} minutes"
     )
 
-    steps = dict(
-        re.findall(
-            r"(?ms)^      - name: (.+)\n(.*?)(?=^      - name: |\Z)",
-            text,
-        )
-    )
+    lines = text.splitlines()
+    steps: dict[str, str] = {}
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        stripped = line.lstrip()
+        indent = len(line) - len(stripped)
+        if indent == 6 and stripped.startswith("- name: "):
+            name = stripped[len("- name: "):]
+            end = index + 1
+            while end < len(lines):
+                candidate = lines[end]
+                candidate_stripped = candidate.lstrip()
+                candidate_indent = len(candidate) - len(candidate_stripped)
+                if candidate_indent == 6 and candidate_stripped.startswith("- name: "):
+                    break
+                end += 1
+            steps[name] = "\n".join(lines[index + 1:end])
+            index = end
+        else:
+            index += 1
+
     required_budgets = {
         "Verify ONNX Runtime Objective-C source archive": 10,
         "Install CocoaPods dependencies": 15,
