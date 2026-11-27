@@ -1,9 +1,21 @@
 import AVFoundation
 import Foundation
 
-enum MeanVC2AudioFileError: Error {
+enum MeanVC2AudioFileError: Error, LocalizedError {
     case unsupportedAudio
     case conversionFailed(String)
+    case referenceDurationOutOfRange(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .unsupportedAudio:
+            return "この音声ファイル形式には対応していません"
+        case .conversionFailed(let message):
+            return "音声の変換に失敗しました: \\(message)"
+        case .referenceDurationOutOfRange(let message):
+            return message
+        }
+    }
 }
 
 enum MeanVC2AudioFile {
@@ -13,6 +25,13 @@ enum MeanVC2AudioFile {
         let sourceFormat = file.processingFormat
         guard sourceFormat.sampleRate > 0, file.length > 0 else {
             throw MeanVC2AudioFileError.unsupportedAudio
+        }
+
+        let durationSeconds = Double(file.length) / sourceFormat.sampleRate
+        if let durationError = MeanVC2ReferenceAudioPolicy.validationError(
+            durationSeconds: durationSeconds
+        ) {
+            throw MeanVC2AudioFileError.referenceDurationOutOfRange(durationError)
         }
 
         guard let source = AVAudioPCMBuffer(
