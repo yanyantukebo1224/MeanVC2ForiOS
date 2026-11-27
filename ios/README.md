@@ -11,6 +11,7 @@ published MeanVC2 120ms_40ms graph set.
 - Native Swift streaming host loop: fbank, Fast-U2++ ASR, BN interpolation,
   DiT flow-matching steps with per-layer KV caches, and Vocos waveform output
 - Optional WavLM-Large + ECAPA speaker encoder for reference-voice registration
+- Shared speaker-vector validation rejects wrong dimensions, non-finite values and zero/negligible-energy embeddings at both WavLM output and GTM ingress; it does not renormalize the reference vector
 - AVFoundation audio-file decoding, mono downmix and 16 kHz resampling
 - CI-only iPhone Simulator smoke test, enabled by a one-shot marker file
   created in the installed app's Documents directory; it uses a deterministic
