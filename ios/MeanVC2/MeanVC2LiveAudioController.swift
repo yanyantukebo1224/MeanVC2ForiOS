@@ -11,6 +11,7 @@ final class MeanVC2LiveAudioController {
         qos: .userInitiated
     )
     private let inputWorkSlots = DispatchSemaphore(value: 24)
+    private let inputDiscontinuity = MeanVC2InputDiscontinuity()
     private let maximumQueuedAudioSeconds = 0.6
     private let mono16k = AVAudioFormat(
         commonFormat: .pcmFormatFloat32,
@@ -96,6 +97,7 @@ final class MeanVC2LiveAudioController {
 
         processingQueue.sync {
             pendingInput.removeAll(keepingCapacity: true)
+            inputDiscontinuity.clear()
             outputFrameBudget = MeanVC2AudioFrameBudget(
                 maximumFrames: max(
                     1,
@@ -162,6 +164,7 @@ final class MeanVC2LiveAudioController {
             playbackGeneration &+= 1
             outputFrameBudget.reset()
             pendingInput.removeAll(keepingCapacity: true)
+            inputDiscontinuity.clear()
             if clearStream {
                 stream = nil
             }
@@ -270,9 +273,10 @@ final class MeanVC2LiveAudioController {
         ))
         let slots = inputWorkSlots
         guard slots.wait(timeout: .now()) == .success else {
-            // Keep callback-to-inference memory bounded when the model cannot
-            // keep up with realtime input. The next accepted buffer continues
-            // through the same streaming state.
+            // A dropped microphone buffer breaks temporal continuity. Mark the
+            // gap so the serial inference queue resets ASR/DiT/Vocos caches
+            // before it processes the next accepted buffer.
+            inputDiscontinuity.markDroppedBuffer()
             return
         }
         processingQueue.async { [weak self, slots] in
@@ -283,6 +287,23 @@ final class MeanVC2LiveAudioController {
 
     private func processInput(_ samples: [Float]) {
         guard let stream else { return }
+        if inputDiscontinuity.consumePendingGap() {
+            pendingInput.removeAll(keepingCapacity: true)
+            playbackGeneration &+= 1
+            outputFrameBudget.reset()
+            if engine.isRunning {
+                // Stop clears already-scheduled stale audio; resume playback
+                // after the model caches have been reset below.
+                player.stop()
+                player.play()
+            }
+            do {
+                try stream.reset()
+            } catch {
+                reportError(error.localizedDescription)
+                return
+            }
+        }
         pendingInput.append(contentsOf: samples)
         while pendingInput.count >= 2_560 {
             let chunk = Array(pendingInput.prefix(2_560))
