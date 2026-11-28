@@ -34,7 +34,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build
-          url="https://codeload.github.com/microsoft/onnxruntime/legacy.zip/3a728b75062256951b6e19ce718907cf1a1d4cf0"
+          url="https://codeload.github.com/microsoft/onnxruntime/zip/3a728b75062256951b6e19ce718907cf1a1d4cf0"
           # The full commit SHA in this URL is the immutable source pin. Avoid
           # a separate api.github.com lookup: hosted runners can receive transient
           # API 403/rate-limit responses even when codeload is reachable.
