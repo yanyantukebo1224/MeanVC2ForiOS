@@ -14,7 +14,7 @@ EXPECTED_C_URL = (
 EXPECTED_C_SHA256 = "b7eedc45932bac758ffd057cac0feb3f682269e47750b159e4c865145cbf0a8e"
 EXPECTED_OBJC_COMMIT = "3a728b75062256951b6e19ce718907cf1a1d4cf0"
 EXPECTED_OBJC_URL = (
-    "https://codeload.github.com/microsoft/onnxruntime/legacy.zip/"
+    "https://codeload.github.com/microsoft/onnxruntime/zip/"
     + EXPECTED_OBJC_COMMIT
 )
 
@@ -48,6 +48,8 @@ def validate(root: Path) -> None:
     require(objc_spec["license"]["type"] == "MIT", "Objective-C pod license is not MIT")
     require(objc_spec["source"] == {"http": EXPECTED_OBJC_URL, "flatten": True},
             "Objective-C source must use the immutable upstream commit archive")
+    require(EXPECTED_OBJC_URL.endswith("/zip/" + EXPECTED_OBJC_COMMIT),
+            "Objective-C source must use the standard codeload zip endpoint")
     require(objc_spec["subspecs"][0]["dependencies"]["onnxruntime-c"] == ["1.24.3"],
             "Objective-C pod must depend on the matching C/C++ runtime")
 
