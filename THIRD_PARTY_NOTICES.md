@@ -26,8 +26,8 @@ requirements.
 
 The Objective-C API sources are pinned to the immutable ONNX Runtime commit
 `3a728b75062256951b6e19ce718907cf1a1d4cf0` in Microsoft's repository. CocoaPods
-downloads the codeload archive by full commit SHA rather than a mutable tag or
-branch. The podspec retains Microsoft's upstream MIT license. CI downloads the
+downloads the standard codeload `/zip/<full-commit-SHA>` archive rather than a mutable tag or
+branch. The `/legacy.zip/<SHA>` route returned HTTP 404 and is not used. The podspec retains Microsoft's upstream MIT license. CI downloads the
 same immutable URL directly, validates ZIP integrity, and checks for the public
 Objective-C header and upstream license. It deliberately avoids a separate
 GitHub REST API lookup because hosted-runner API 403/rate-limit responses had
