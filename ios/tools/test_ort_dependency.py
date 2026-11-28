@@ -86,6 +86,17 @@ class DependencyProvenanceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "immutable Objective-C source commit"):
             checker.validate(self.root)
 
+    def test_rejects_legacy_commit_archive_endpoint(self) -> None:
+        path = self.root / "ios/Podspecs/onnxruntime-objc.podspec.json"
+        spec = json.loads(path.read_text(encoding="utf-8"))
+        spec["source"]["http"] = (
+            "https://codeload.github.com/microsoft/onnxruntime/legacy.zip/"
+            + checker.EXPECTED_OBJC_COMMIT
+        )
+        path.write_text(json.dumps(spec), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "immutable upstream commit archive"):
+            checker.validate(self.root)
+
     def test_rejects_github_api_preflight(self) -> None:
         path = self.root / ".github/workflows/ios-build.yml"
         path.write_text(
